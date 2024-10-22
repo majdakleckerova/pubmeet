@@ -1,2 +1,2 @@
 # pubmeet
-náš projektík na KI/NSQL
+**náš projektík na KI/NSQL**
