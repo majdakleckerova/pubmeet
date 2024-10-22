@@ -1,71 +1,14 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE-edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Můj Profil</title>
-    <style>
-        body {
-            background-color: #f0f8ff;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            font-family: Arial, Helvetica, sans-serif;
-        }
-        
-        .sidebar {
-            width: 220px; 
-            background: linear-gradient(135deg,#8B4513 , #D2B48C );  
-            color: white;
-            padding: 20px; 
-            box-shadow: 3px 0 10px rgba(0, 0, 0, 0.2);
-            border-radius: 0 15px 15px 0;
-            height: 100vh;
-            position: fixed;
-            top: 0;
-            left: 0;
-        }
-        
-        .sidebar a {
-            color: white;
-            display: block;
-            padding: 12px 0;
-            text-decoration: none;
-            font-size: 18px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-            transition: background-color 0.3s ease;
-        }
+{% extends "sablona.html" %}
 
-        .sidebar a:hover {
-            background-color: rgba(255, 255, 255, 0.2);
-        }
+{% block subtitle %}
 
+{% endblock %}
 
-        .container {
-            margin-left: 240px; /* Posun hlavního obsahu vedle sidebaru */
-            text-align: center;
-            padding: 50px; /* Přidání odsazení pro větší estetiku */
-        }
-
-        h1 {
-            font-size: 48px;
-            font-weight: bold;
-            color: #333;
-        }
-
-        p {
-            font-size: 18px;
-            color: #555;
-        }
-    </style>
-</head>
+{% block main %}
 <body>
     <div class="container">
-        <h1>Dejv Kraloš</h1>
-        <p>Vymyslel jsem citát na hlavní stránce.</p>
+        <h1>Kdo jsi?</h1>
     </div>
 </body>
 </html>
+{% endblock %}
