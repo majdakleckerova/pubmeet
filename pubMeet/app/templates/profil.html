@@ -1,0 +1,18 @@
+{% extends "sablona.html" %}
+
+{% block subtitle %}
+
+{% endblock %}
+
+{% block main %}
+<body>
+    <div class="container">
+        <h1>Kdo jsi?</h1>
+    </div>
+    <h2>Profil uživatele {{ current_user }}</h2>
+    <p>Username: {{ current_user.username }}</p>
+    <p>ID: {{ current_user.id }}</p>
+    <a href="{{ url_for('logout') }}">Odhlásit se</a>
+</body>
+</html>
+{% endblock %}
