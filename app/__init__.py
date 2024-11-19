@@ -5,6 +5,9 @@ import os
 from app.db.neo4j import get_user, neo4j_driver
 from app.db.redis import redis_client
 from app.models.user import User
+import uuid
+import json
+
 load_dotenv()
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY")
@@ -22,7 +25,6 @@ def load_user(username):
     if user_data:
         return User(user_data["username"], user_data["password_hash"], user_data["email"])
     return None
-
 from app import routes
 from werkzeug.security import generate_password_hash
 
@@ -47,8 +49,11 @@ def register_user(username, email, password):
             password_hash=password_hash
         )
         return "Uživatel úspěšně zaregistrován"
+
+
 from werkzeug.security import check_password_hash
 
+# Funkce pro přihlášení uživatele
 def login_user(username, password):
     user = get_user(username)
     if not user:
@@ -56,8 +61,15 @@ def login_user(username, password):
 
     # Ověření hesla
     if check_password_hash(user["password_hash"], password):
+        # Vytvoření unikátního session ID
+        session_id = str(uuid.uuid4())
+        session_data = {
+            "username": username,
+            "email": user["email"]
+        }
+
         # Uložení session do Redis
-        redis_client.set(f"user_session:{username}", "logged_in", ex=3600)  # Expirování po 1 hodině
-        return "Přihlášení úspěšné"
+        redis_client.setex(f"session:{session_id}", 3600, json.dumps(session_data))  # Expirování po 1 hodině
+        return {"success": True, "message": "Přihlášení úspěšné", "session_id": session_id}
     else:
-        return "Špatné heslo"
+        return {"success": False, "message": "Špatné heslo"}

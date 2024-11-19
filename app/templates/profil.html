@@ -1,17 +1,18 @@
 {% extends "sablona.html" %}
 
 {% block subtitle %}
-
+    <title>Profil</title>
 {% endblock %}
 
 {% block main %}
-<body>
     <div class="container">
         <h1>Profil</h1>
+        {% if current_user.is_authenticated %}
+            <p>Jste přihlášen jako: {{ current_user.username }}</p>
+            <a href="{{ url_for('logout') }}">Odhlásit se</a>
+        {% else %}
+            <p>Nejste přihlášen.</p>
+            <a href="{{ url_for('login') }}">Přihlásit se</a>
+        {% endif %}
     </div>
-    <h1>Vítejte na profilu, {{ current_user.username }}!</h1>
-    <p>Jste přihlášen jako: {{ current_user.username }}</p>
-    <a href="{{ url_for('logout') }}">Odhlásit se</a>
-</body>
-</html>
 {% endblock %}

@@ -31,6 +31,6 @@ services:
       NEO4J_AUTH: 'neo4j/your_neo4j_password'
     healthcheck:
       test: cypher-shell --username neo4j --password your_neo4j_password 'MATCH (n) RETURN COUNT(n);' # Checks if neo4j server is up and running
-      interval: 10s
-      timeout: 10s
+      interval: 5s
+      timeout: 5s
       retries: 5
