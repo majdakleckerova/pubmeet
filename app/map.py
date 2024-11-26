@@ -1,36 +1,79 @@
-import folium as fo
-import polars as pl 
+from flask import Blueprint, jsonify, request
+from app.db.redis import redis_client
+from app.extensions import socketio
+import os
+map_bp = Blueprint('map', __name__)
+import pandas as pd
 
-hospody = pl.read_excel("hospody.xlsx")
-hospody = hospody.filter(pl.col("Latitude").is_not_null() & pl.col("Longitude").is_not_null())
+def load_pubs_from_excel():
+    file_path = "hospody.xlsx"
+    hospody_df = pd.read_excel(file_path)
+    hospody_df = hospody_df.dropna(subset=['Latitude', 'Longitude'])  # Odstranění záznamů bez souřadnic
+    return hospody_df.to_dict(orient='records')
+# Endpoint pro načtení hospod
+@map_bp.route('/get_pubs', methods=['GET'])
+def get_pubs():
+    hospody = load_pubs_from_excel()
+    response = []
+    for hospoda in hospody:
+        name = hospoda["Název"]
+        latitude = hospoda["Latitude"]
+        longitude = hospoda["Longitude"]
+        redis_key = f"pub:{name.replace(' ', '_')}:users"
 
-min_lat, max_lat = 50.6, 50.7
-min_long, max_long = 14.0, 14.1
+        # Získání počtu uživatelů z Redis
+        if redis_client.exists(redis_key):
+            people_count = redis_client.llen(redis_key)
+        else:
+            # Pokud klíč neexistuje, nastav prázdný seznam
+            redis_client.delete(redis_key)  # Pro jistotu smaž zbytky
+            people_count = 0
 
-usti_map = fo.Map(
-    location=[50.6617, 14.0434],  
-    zoom_start=15,              
-    max_bounds=True,            
-    min_lat=min_lat,
-    max_lat=max_lat,
-    min_lon=min_long,
-    max_lon=max_long,
-    width="100%",
-    height="100vh"
-)
+        response.append({
+            "name": name,
+            "latitude": latitude,
+            "longitude": longitude,
+            "people_count": people_count
+        })
+    return jsonify(response)
+# Endpoint pro připojení/odpojení od hospody
+@map_bp.route('/toggle_pub', methods=['POST'])
+def toggle_pub():
+    data = request.json
+    pub_name = data.get('name')
+    username = data.get('username')  # Aktuální uživatel
+    redis_user_key = f"user:{username}:current_pub"
+    redis_pub_key = f"pub:{pub_name.replace(' ', '_')}:users"
 
-for row in hospody.to_dicts():
-    název_hospody = row["Název"]
-    lat = row["Latitude"]
-    long = row["Longitude"]
+    # Zjisti, zda je uživatel již připojen k jiné hospodě
+    current_pub = redis_client.get(redis_user_key)
 
-    popup_content = f"<strong>{název_hospody}</strong>"
+    if current_pub:
+        # Uživatel je připojen k jiné hospodě, odpoj ho
+        old_pub_key = f"pub:{current_pub.replace(' ', '_')}:users"
+        redis_client.lrem(old_pub_key, 0, username)  # Odebrání uživatele ze staré hospody
 
-    fo.Marker(
-        location=[lat, long],
-        popup=fo.Popup(popup_content, max_width=300),
-        icon=fo.Icon(icon="cocktail", color="lightgray", prefix="fa", icon_color="black")
-    ).add_to(usti_map)
+    if current_pub == pub_name:
+        # Pokud uživatel opouští stejnou hospodu
+        redis_client.lrem(redis_pub_key, 0, username)
+        if redis_client.llen(redis_pub_key) == 0:
+            redis_client.delete(redis_pub_key)  # Smaž klíč pouze pokud je prázdný
+        redis_client.delete(redis_user_key)
+        action = "left"
+    else:
+        # Připojení k nové hospodě
+        redis_client.lpush(redis_pub_key, username)  # Přidání uživatele do nové hospody
+        redis_client.set(redis_user_key, pub_name)  # Aktualizuj aktuální hospodu uživatele
+        action = "joined"
 
-usti_map.save("usti_map.html")
+    # Aktualizace počtu lidí v nové hospodě
+    new_count = redis_client.llen(redis_pub_key)
 
+    # Real-time update přes Socket.IO
+    socketio.emit('update_pub_count', {'pub_name': pub_name, 'new_count': new_count})
+    if current_pub:
+        # Aktualizuj starou hospodu (počet lidí)
+        old_pub_count = redis_client.llen(old_pub_key)
+        socketio.emit('update_pub_count', {'pub_name': current_pub, 'new_count': old_pub_count})
+
+    return jsonify({"success": True, "action": action, "new_count": new_count})

@@ -5,14 +5,13 @@
 {% endblock %}
 
 {% block main %}
-    <div class="container">
-        <h1>Profil</h1>
-        {% if current_user.is_authenticated %}
-            <p>Jste přihlášen jako: {{ current_user.username }}</p>
-            <a href="{{ url_for('logout') }}">Odhlásit se</a>
-        {% else %}
-            <p>Nejste přihlášen.</p>
-            <a href="{{ url_for('login') }}">Přihlásit se</a>
-        {% endif %}
-    </div>
+<body>
+    <h1>Profil uživatele</h1>
+    {% if current_user.is_authenticated %}
+        <p>Jste přihlášen jako: {{ current_user.username }}</p>
+    {% else %}
+        <p>Nejste přihlášen.</p>
+    {% endif %}
+</body>
+</html>
 {% endblock %}

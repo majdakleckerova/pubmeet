@@ -1,40 +1,35 @@
 <!DOCTYPE html>
 <html>
-    <head>
-        <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
-        <script>
-            L_NO_TOUCH = false;
-            L_DISABLE_3D = false;
-        </script>
-        <style>html, body {width: 100%;height: 100%;margin: 0;padding: 0;}</style>
-        <style>#map {position:absolute;top:0;bottom:0;right:0;left:0;}</style>
-        <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.js"></script>
-        <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-        <script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.css"/>
-        <style>
-            .leaflet-popup-content { text-align: left; }
-            .popup-btn {
-                padding: 5px 10px;
-                background-color: #007bff;
-                color: white;
-                border: none;
-                border-radius: 5px;
-                cursor: pointer;
-            }
-        </style>
-    </head>
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    <script>
+        L_NO_TOUCH = false;
+        L_DISABLE_3D = false;
+    </script>
+    <style>
+        html, body {width: 100%; height: 100%; margin: 0; padding: 0;}
+        #map {position: absolute; top: 0; bottom: 0; right: 0; left: 0;}
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.js"></script>
+    <script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.css"/>
+</head>
 <body>
     <div id="map"></div>
     <script>
-        var socket = io();
+        var currentUser = "{{ current_user.username if current_user.is_authenticated else '' }}";
+    </script>
+    <script>
+        var socket = io(); // Připojení na Socket.IO server
         var map = L.map('map').setView([50.6617, 14.0434], 15);
-    
+
+        // Načtení mapových podkladů
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(map);
 
+        // Načtení hospod z backendu
         fetch('/get_pubs')
         .then(response => response.json())
         .then(data => {
@@ -44,9 +39,8 @@
                     var popupContent = `
                         <div>
                             <h4>${pub.name}</h4>
-                            <p><b>Adresa:</b> ${pub.address}</p>
                             <p><b>Počet lidí:</b> <span id="people_count_${normalizedName}">${pub.people_count}</span></p>
-                            <button id="button_${normalizedName}" class="popup-btn" onclick="toggleHospital('${pub.name}')">
+                            <button id="button_${normalizedName}" class="popup-btn" onclick="togglePub('${pub.name}')">
                                 Přidat se
                             </button>
                         </div>
@@ -58,31 +52,38 @@
             });
         });
 
-        function toggleHospital(pubName) {
-        fetch('/toggle_hospital', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name: pubName })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                const normalizedName = pubName.replace(/\s/g, '_');
-                const button = document.querySelector(`#button_${normalizedName}`);
-                const countElement = document.querySelector(`#people_count_${normalizedName}`);
-                button.textContent = data.action === 'joined' ? 'Opustit' : 'Přidat se';
+        // Připojení nebo opuštění hospody
+        function togglePub(pubName) {
+            if (!currentUser) {
+                alert("Musíte být přihlášeni, abyste se mohli připojit do hospody.");
+                return;
+            }
+        
+            fetch('/toggle_pub', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: pubName, username: currentUser })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const normalizedName = pubName.replace(/\s/g, '_');
+                    const button = document.querySelector(`#button_${normalizedName}`);
+                    const countElement = document.querySelector(`#people_count_${normalizedName}`);
+                    button.textContent = data.action === 'joined' ? 'Opustit' : 'Přidat se';
+                    countElement.textContent = data.new_count;
+                }
+            });
+        }
+
+        // Real-time aktualizace počtu lidí v hospodě
+        socket.on('update_pub_count', function(data) {
+            const normalizedName = data.pub_name.replace(/\s/g, '_');
+            const countElement = document.querySelector(`#people_count_${normalizedName}`);
+            if (countElement) {
                 countElement.textContent = data.new_count;
             }
         });
-    }
-
-    socket.on('update_pub_count', function(data) {
-        const normalizedName = data.pub_name.replace(/\s/g, '_');
-        const countElement = document.querySelector(`#people_count_${normalizedName}`);
-        if (countElement) {
-            countElement.textContent = data.new_count;
-        }
-    });
-</script>
+    </script>
 </body>
 </html>
