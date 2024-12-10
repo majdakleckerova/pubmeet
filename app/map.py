@@ -1,95 +1,101 @@
 from flask import Blueprint, jsonify, request
 from app.db.redis import redis_client
 from app.extensions import socketio
+from app.db.neo4j import neo4j_driver
 import os
 map_bp = Blueprint('map', __name__)
 import pandas as pd
-
-def load_pubs_from_excel():
-    file_path = "hospody.xlsx"
-    hospody_df = pd.read_excel(file_path)
-    hospody_df = hospody_df.dropna(subset=['Latitude', 'Longitude'])  # Odstranění záznamů bez souřadnic
-    return hospody_df.to_dict(orient='records')
+from app.db.neo4j import get_neo4j_session
+from flask_login import current_user
 # Endpoint pro načtení hospod
 @map_bp.route('/get_pubs', methods=['GET'])
 def get_pubs():
-    hospody = load_pubs_from_excel()
-    response = []
-    for hospoda in hospody:
-        name = hospoda["Název"]
-        latitude = hospoda["Latitude"]
-        longitude = hospoda["Longitude"]
-        redis_key = f"pub:{name.replace(' ', '_')}:users"
+    with get_neo4j_session() as session:
+        result = session.run("""
+            MATCH (p:Pub)
+            OPTIONAL MATCH (p)<-[:IN_PUB]-(u:User)
+            RETURN p.name AS name, p.latitude AS latitude, p.longitude AS longitude, COUNT(u) AS users_count
+        """)
+        pubs = []
+        for record in result:
+            pubs.append({
+                "name": record["name"],
+                "latitude": record["latitude"],
+                "longitude": record["longitude"],
+                "people_count": record["users_count"]
+            })
+        return jsonify(pubs)
+def update_pub_count(session, pub_name):
+    result = session.run("""
+        MATCH (p:Pub {name: $pub_name})
+        RETURN p.people_count AS people_count
+    """, pub_name=pub_name)
+    return result.single()["people_count"]
 
-        # Získání počtu uživatelů z Redis
-        if redis_client.exists(redis_key):
-            people_count = redis_client.llen(redis_key)
-        else:
-            # Pokud klíč neexistuje, nastav prázdný seznam
-            redis_client.delete(redis_key)  # Pro jistotu smaž zbytky
-            people_count = 0
-
-        response.append({
-            "name": name,
-            "latitude": latitude,
-            "longitude": longitude,
-            "people_count": people_count
-        })
-    return jsonify(response)
 # Endpoint pro připojení/odpojení od hospody
 @map_bp.route('/toggle_pub', methods=['POST'])
 def toggle_pub():
-    data = request.json
-    pub_name = data.get('name')  # Name of the pub user interacts with
-    username = data.get('username')  # Username of the current user
-    redis_user_key = f"user:{username}:current_pub"  # Key to track user's current pub
-    redis_pub_key = f"pub:{pub_name.replace(' ', '_')}:users"  # Key to track pub's users
-
-    # Fetch the user's current pub from Redis
-    current_pub = redis_client.get(redis_user_key)
-
-    if current_pub == pub_name:
-        # User is explicitly leaving the current pub
-        users_in_pub = redis_client.lrange(redis_pub_key, 0, -1)
-        if username in users_in_pub:
-            users_in_pub.remove(username)  # Remove user from the local list
-            redis_client.delete(redis_pub_key)
-            if users_in_pub:
-                redis_client.rpush(redis_pub_key, *users_in_pub)  # Update Redis with the new list
-
-        redis_client.delete(redis_user_key)  # Clear the user's current pub association
-        action = "left"
-    else:
-        # User is joining a new pub
-        if current_pub:
-            # Handle leaving the previous pub
-            old_pub_key = f"pub:{current_pub.replace(' ', '_')}:users"
-            old_users = redis_client.lrange(old_pub_key, 0, -1)
-            if username in old_users:
-                old_users.remove(username)
-                redis_client.delete(old_pub_key)
-                if old_users:
-                    redis_client.rpush(old_pub_key, *old_users)  # Update Redis for the old pub
-
-        # Join the new pub
-        users_in_pub = redis_client.lrange(redis_pub_key, 0, -1)
-        if username not in users_in_pub:
-            users_in_pub.append(username)
-            redis_client.delete(redis_pub_key)
-            redis_client.rpush(redis_pub_key, *users_in_pub)
-
-        redis_client.set(redis_user_key, pub_name)  # Update user's current pub
-        action = "joined"
-
-    # Calculate new counts for the updated pub
-    new_count = len(users_in_pub)
-
-    # Emit real-time updates for the current pub
-    socketio.emit('update_pub_count', {'pub_name': pub_name, 'new_count': new_count})
+    try:
+        print("Received toggle_pub request")
+        data = request.json
+        pub_name = data['name']
+        print(f"Pub name: {pub_name}")
+        data = request.json
+        pub_name = data['name']
     
-    # Emit updates for the old pub if applicable
-    if current_pub and current_pub != pub_name:
-        old_pub_count = redis_client.llen(f"pub:{current_pub.replace(' ', '_')}:users")
-        socketio.emit('update_pub_count', {'pub_name': current_pub, 'new_count': old_pub_count})
-
-    return jsonify({"success": True, "action": action, "new_count": new_count})
+        # Ověření, že uživatel je přihlášen
+        if not current_user.is_authenticated:
+            return jsonify(success=False, message="User not authenticated"), 401
+    
+        username = current_user.username
+    
+        with neo4j_driver.session() as session:
+            # Zjisti, zda je uživatel připojen do nějaké hospody
+            current_relationship = session.run("""
+                MATCH (u:User {username: $username})-[r:VISITS]->(p:Pub)
+                RETURN p.name AS current_pub
+            """, username=username).single()
+    
+            if current_relationship:
+                current_pub = current_relationship["current_pub"]
+                # Pokud uživatel je připojen k jiné hospodě, odpoj jej
+                if current_pub != pub_name:
+                    session.run("""
+                        MATCH (u:User {username: $username})-[r:VISITS]->(p:Pub {name: $current_pub})
+                        DELETE r
+                    """, username=username, current_pub=current_pub)
+                    action = 'switched'
+                else:
+                    # Pokud uživatel klikne na stejnou hospodu, odpojí se
+                    session.run("""
+                        MATCH (u:User {username: $username})-[r:VISITS]->(p:Pub {name: $pub_name})
+                        DELETE r
+                    """, username=username, pub_name=pub_name)
+                    action = 'left'
+            else:
+                # Pokud není připojen, přidej vztah
+                session.run("""
+                    MATCH (u:User {username: $username}), (p:Pub {name: $pub_name})
+                    CREATE (u)-[r:VISITS]->(p)
+                """, username=username, pub_name=pub_name)
+                action = 'joined'
+    
+            # Vždy přepočítej počet lidí v hospodě
+            result = session.run("""
+                MATCH (p:Pub {name: $pub_name})
+                OPTIONAL MATCH (p)<-[:VISITS]-(u:User)
+                WITH p, COUNT(u) AS user_count
+                SET p.people_count = user_count
+                RETURN p.people_count AS people_count
+            """, pub_name=pub_name)
+            new_count = result.single()["people_count"]
+        # Emituj real-time aktualizaci
+        socketio.emit('update_pub_count', {
+            'pub_name': pub_name,
+            'new_count': new_count
+        })
+    
+        return jsonify(success=True, action=action, new_count=new_count)
+    except Exception as e:
+        print(f"Error in toggle_pub: {e}")
+        return jsonify(success=False, error="An error occurred"), 500
