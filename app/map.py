@@ -25,12 +25,26 @@ def get_pubs():
                 "people_count": record["users_count"]
             })
         return jsonify(pubs)
-def update_pub_count(session, pub_name):
-    result = session.run("""
-        MATCH (p:Pub {name: $pub_name})
-        RETURN p.people_count AS people_count
-    """, pub_name=pub_name)
-    return result.single()["people_count"]
+
+# Endpoint pro přepočítání počtu lidí v hospodě
+@map_bp.route('/get_pub_count', methods=['POST'])
+def get_pub_count():
+    try:
+        data = request.json
+        pub_name = data['name']
+        
+        with neo4j_driver.session() as session:
+            result = session.run("""
+                MATCH (p:Pub {name: $pub_name})
+                OPTIONAL MATCH (p)<-[:VISITS]-(u:User)
+                RETURN COUNT(u) AS user_count
+            """, pub_name=pub_name)
+            count = result.single()["user_count"]
+
+        return jsonify(success=True, pub_name=pub_name, user_count=count)
+    except Exception as e:
+        print(f"Error in get_pub_count: {e}")
+        return jsonify(success=False, error="An error occurred"), 500
 
 # Endpoint pro připojení/odpojení od hospody
 @map_bp.route('/toggle_pub', methods=['POST'])

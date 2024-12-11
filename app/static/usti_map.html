@@ -45,9 +45,14 @@
                             </button>
                         </div>
                     `;
-                    L.marker([pub.latitude, pub.longitude])
+                    const marker = L.marker([pub.latitude, pub.longitude])
                         .addTo(map)
                         .bindPopup(popupContent);
+                    
+                    // Při otevření popupu načti aktuální počet uživatelů
+                    marker.on('popupopen', function() {
+                        updatePubCount(pub.name);
+                    });
                 }
             });
         });
@@ -62,7 +67,7 @@
             fetch('/toggle_pub', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name: pubName, username: currentUser })
+                body: JSON.stringify({ name: pubName })
             })
             .then(response => response.json())
             .then(data => {
@@ -74,6 +79,28 @@
                     countElement.textContent = data.new_count;
                 }
             });
+        }
+
+        // Funkce pro aktualizaci počtu uživatelů
+        function updatePubCount(pubName) {
+            fetch('/get_pub_count', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: pubName })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const normalizedName = pubName.replace(/\s/g, '_');
+                    const countElement = document.querySelector(`#people_count_${normalizedName}`);
+                    if (countElement) {
+                        countElement.textContent = data.user_count;
+                    }
+                } else {
+                    console.error("Failed to fetch pub count:", data.error);
+                }
+            })
+            .catch(err => console.error("Error fetching pub count:", err));
         }
 
         // Real-time aktualizace počtu lidí v hospodě
