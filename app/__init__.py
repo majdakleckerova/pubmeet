@@ -17,6 +17,8 @@ def create_app():
     # Konfigurace session
     app.config['SESSION_TYPE'] = 'filesystem'
     app.config['SESSION_PERMANENT'] = False
+    app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static', 'uploads')
+
     Session(app)  # Inicializace Flask-Session
 
     # Registrace blueprintů

@@ -1,9 +1,16 @@
-from flask import Blueprint, request, redirect, render_template, flash, url_for, session
+from flask import Blueprint, request, redirect, render_template, flash, url_for, session, current_app
 from werkzeug.security import generate_password_hash, check_password_hash
 from app.db.neo4j import get_neo4j_session
 from flask_login import login_required, login_user, logout_user, current_user
 from app.models.user import User
+import os
+import uuid
+
 auth_bp = Blueprint('auth', __name__)
+
+def allowed_file(filename):
+    allowed_extensions = {"png", "jpg", "jpeg"}
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in allowed_extensions
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
 def register():
@@ -11,12 +18,27 @@ def register():
         username = request.form['username']
         email = request.form['email']
         password = request.form['password']
+        profile_photo = request.files.get("profile_photo")
+
 
         if not username or not email or not password:
             flash("Vyplňte všechna pole.")
             return redirect(url_for('auth.register'))
 
         hashed_password = generate_password_hash(password)
+
+        photo_filename = "default.png"
+        if profile_photo and allowed_file(profile_photo.filename):
+            file_extension = profile_photo.filename.rsplit('.', 1)[1].lower()
+            unique_filename = f"{uuid.uuid4().hex}.{file_extension}"
+            filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], unique_filename)       
+            try:
+                profile_photo.save(filepath)
+                photo_filename = unique_filename 
+            except Exception as e:
+                flash("Nepodařilo se uložit profilovou fotku.")
+                return redirect(url_for('auth.register'))
+
 
         neo4j_session = get_neo4j_session()
         result = neo4j_session.run(
@@ -28,8 +50,8 @@ def register():
             return redirect(url_for('auth.register'))
 
         neo4j_session.run(
-            "CREATE (u:User {username: $username, email: $email, password: $password})",
-            username=username, email=email, password=hashed_password
+            "CREATE (u:User {username: $username, email: $email, password: $password, profile_photo: $profile_photo})",
+            username=username, email=email, password=hashed_password, profile_photo=photo_filename
         )
 
         flash("Registrace proběhla úspěšně. Nyní se můžete přihlásit.")

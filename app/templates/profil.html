@@ -9,6 +9,15 @@
     <h1>Profil uživatele</h1>
     {% if current_user.is_authenticated %}
         <p>Jste přihlášen jako: {{ current_user.username }}</p>
+
+        <div>
+            {% if current_user.profile_photo %}
+                <img src="{{ url_for('static', filename='uploads/' + current_user.profile_photo) }}" alt="Profilová fotka" style="width: 150px; height: 150px; border-radius: 50%;">
+            {% else %}
+                <img src="{{ url_for('static', filename='uploads/default.png') }}" alt="Výchozí profilová fotka" style="width: 150px; height: 150px; border-radius: 50%;">
+            {% endif %}
+        </div>
+        
     {% else %}
         <p>Nejste přihlášen.</p>
     {% endif %}
