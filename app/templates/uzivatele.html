@@ -1,0 +1,67 @@
+{% extends "sablona.html" %}
+
+{% block title %}Seznam uživatelů{% endblock %}
+
+{% block main %}
+    <style>
+        ul {
+            list-style-type: none !important;
+            padding: 0;
+        }
+
+        .profile-image {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .user-container {
+            margin-bottom: 20px;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+        }
+
+        .user-name {
+            margin-left: 10px;
+        }
+
+        button {
+            padding: 10px;
+            margin-top: 5px;
+            cursor: pointer;
+            background-color: #ccc;
+            border: none;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        button:disabled {
+            background-color: #e0e0e0;
+            cursor: not-allowed;
+        }
+    </style>
+
+    <h1>Seznam uživatelů</h1>
+    <ul>
+        {% for user in users %}
+        <li class="user-container">
+            <div class="user-info">
+                {% if user.profile_photo %}
+                    <img src="{{ url_for('static', filename='uploads/' + user.profile_photo) }}" alt="Profilová fotka" class="profile-image">
+                {% else %}
+                    <img src="{{ url_for('static', filename='uploads/default.png') }}" alt="Výchozí profilová fotka" class="profile-image">
+                {% endif %}
+                <p class="user-name"><strong>{{ user.username }}</strong></p>
+            </div>
+            <div>
+                <button disabled>Zobrazit profil</button>
+                <button disabled>Přidat jako přítele</button>
+            </div>
+        </li>
+        {% endfor %}
+    </ul>
+{% endblock %}

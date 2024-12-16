@@ -1,5 +1,6 @@
 from flask import Blueprint, jsonify, request
 from app.db.redis import redis_client
+from flask_login import current_user
 from app.extensions import socketio
 from app.db.neo4j import neo4j_driver
 import os
@@ -14,7 +15,9 @@ def get_pubs():
         result = session.run("""
             MATCH (p:Pub)
             OPTIONAL MATCH (p)<-[:IN_PUB]-(u:User)
-            RETURN p.name AS name, p.latitude AS latitude, p.longitude AS longitude, COUNT(u) AS users_count
+            OPTIONAL MATCH (p)<-[:LIKES]-(l:User)
+            RETURN p.name AS name, p.latitude AS latitude, p.longitude AS longitude, 
+                   COUNT(u) AS users_count, COUNT(l) AS likes_count
         """)
         pubs = []
         for record in result:
@@ -22,9 +25,11 @@ def get_pubs():
                 "name": record["name"],
                 "latitude": record["latitude"],
                 "longitude": record["longitude"],
-                "people_count": record["users_count"]
+                "people_count": record["users_count"],
+                "likes_count": record["likes_count"]
             })
         return jsonify(pubs)
+
 
 # Endpoint pro přepočítání počtu lidí v hospodě
 @map_bp.route('/get_pub_count', methods=['POST'])
@@ -113,3 +118,78 @@ def toggle_pub():
     except Exception as e:
         print(f"Error in toggle_pub: {e}")
         return jsonify(success=False, error="An error occurred"), 500
+    
+# Endpoint pro přidání/odebrání like u hospody
+@map_bp.route('/toggle_like', methods=['POST'])
+def toggle_like():
+    try:
+        if not current_user.is_authenticated:
+            return jsonify(success=False, message="User not authenticated"), 401
+
+        data = request.json
+        pub_name = data['name']
+        username = current_user.username
+
+        with neo4j_driver.session() as session:
+            # Zkontroluj, zda uživatel již dává like této hospodě
+            existing_like = session.run("""
+                MATCH (u:User {username: $username})-[r:LIKES]->(p:Pub {name: $pub_name})
+                RETURN r
+            """, username=username, pub_name=pub_name).single()
+
+            if existing_like:
+                # Pokud uživatel již like dal, odebereme ho
+                session.run("""
+                    MATCH (u:User {username: $username})-[r:LIKES]->(p:Pub {name: $pub_name})
+                    DELETE r
+                """, username=username, pub_name=pub_name)
+                action = 'unliked'
+            else:
+                # Pokud uživatel ještě like nedal, přidáme ho
+                session.run("""
+                    MATCH (u:User {username: $username}), (p:Pub {name: $pub_name})
+                    CREATE (u)-[r:LIKES]->(p)
+                """, username=username, pub_name=pub_name)
+                action = 'liked'
+
+            # Po změně like přepočítáme počet lajků pro tuto hospodu
+            result = session.run("""
+                MATCH (p:Pub {name: $pub_name})
+                OPTIONAL MATCH (p)<-[:LIKES]-(l:User)
+                RETURN COUNT(l) AS likes_count
+            """, pub_name=pub_name)
+            new_like_count = result.single()["likes_count"]
+
+            # Emituj real-time aktualizaci lajků pro tuto hospodu
+            socketio.emit('update_like_count', {
+                'pub_name': pub_name,
+                'new_like_count': new_like_count
+            })
+
+        return jsonify(success=True, action=action)
+    except Exception as e:
+        print(f"Error in toggle_like: {e}")
+        return jsonify(success=False, error="An error occurred"), 500
+    
+
+@map_bp.route('/get_liked_pubs', methods=['GET'])
+def get_liked_pubs():
+    if current_user.is_authenticated:
+        username = current_user.username
+        try:
+            with neo4j_driver.session() as session:
+                # Dotaz na lajknuté hospody
+                result = session.run("""
+                    MATCH (u:User {username: $username})-[:LIKES]->(p:Pub)
+                    RETURN p.name AS pub_name
+                """, username=username)
+                liked_pubs = [record["pub_name"] for record in result]
+            return jsonify(success=True, pubs=liked_pubs)
+        except Exception as e:
+            print(f"Error in get_liked_pubs: {e}")
+            return jsonify(success=False, error="Error fetching liked pubs"), 500
+    return jsonify(success=False, message="User not authenticated"), 401
+
+
+
+

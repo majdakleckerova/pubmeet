@@ -1,6 +1,6 @@
 from flask import Blueprint, request, redirect, render_template, flash, url_for, session, current_app
 from werkzeug.security import generate_password_hash, check_password_hash
-from app.db.neo4j import get_neo4j_session
+from app.db.neo4j import get_neo4j_session, get_users
 from flask_login import login_required, login_user, logout_user, current_user
 from app.models.user import User
 import os
@@ -159,6 +159,12 @@ def edit_profile():
 
     return render_template('edit_profile.html')
 
+@auth_bp.route("/uzivatele")
+@login_required
+def index():
+    users = get_users()
+    return render_template("uzivatele.html", users=users)
+
 
 @auth_bp.route('/logout')
 @login_required
@@ -186,9 +192,4 @@ def home():
 def mapik():
     return render_template("mapik.html")
 
-
-@auth_bp.route("/chabri")
-@login_required
-def chabri():
-    return render_template("chabri.html")
 

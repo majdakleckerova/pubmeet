@@ -18,8 +18,7 @@
     <div id="map"></div>
     <script>
         var currentUser = "{{ current_user.username if current_user.is_authenticated else '' }}";
-    </script>
-    <script>
+
         var socket = io(); // Připojení na Socket.IO server
         var map = L.map('map').setView([50.6617, 14.0434], 15);
 
@@ -28,6 +27,23 @@
             maxZoom: 19,
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(map);
+
+        // SVG pro růžový marker
+        const pinkIconSvg = `
+<svg xmlns="http://www.w3.org/2000/svg" width="30" height="46" viewBox="0 0 30 46">
+  <path fill="#ff69b4" stroke="#d41e7a" stroke-width="2"
+        d="M15 0c-8.28 0-15 6.72-15 15 0 10.33 15 31 15 31s15-20.67 15-31c0-8.28-6.72-15-15-15zm0 22.5c-4.14 0-7.5-3.36-7.5-7.5s3.36-7.5 7.5-7.5 7.5 3.36 7.5 7.5-3.36 7.5-7.5 7.5z"/>
+</svg>`;
+
+        // Vytvoření ikony pomocí SVG
+        const pinkIcon = L.icon({
+            iconUrl: 'data:image/svg+xml;base64,' + btoa(pinkIconSvg),
+            iconSize: [30, 46], // Velikost ikony
+            iconAnchor: [15, 46], // Bod ukotvení (střed dole)
+            popupAnchor: [0, -46], // Umístění popupu vůči ikoně
+            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.3/images/marker-shadow.png',
+            shadowSize: [46, 46]
+        });
 
         // Načtení hospod z backendu
         fetch('/get_pubs')
@@ -39,16 +55,22 @@
                     var popupContent = `
                         <div>
                             <h4>${pub.name}</h4>
+                            <p><b>Počet lajků:</b> <span id="like_count_${normalizedName}">${pub.likes_count}</span></p>
                             <p><b>Počet lidí:</b> <span id="people_count_${normalizedName}">${pub.people_count}</span></p>
                             <button id="button_${normalizedName}" class="popup-btn" onclick="togglePub('${pub.name}')">
                                 Přidat se
                             </button>
+                            <button id="like_button_${normalizedName}" class="popup-btn" onclick="toggleLike('${pub.name}')">
+                                Lajkni hospodu
+                            </button>
                         </div>
                     `;
-                    const marker = L.marker([pub.latitude, pub.longitude])
+
+                    // Vytvoření markeru s růžovou ikonou
+                    const marker = L.marker([pub.latitude, pub.longitude], { icon: pinkIcon })
                         .addTo(map)
                         .bindPopup(popupContent);
-                    
+
                     // Při otevření popupu načti aktuální počet uživatelů
                     marker.on('popupopen', function() {
                         updatePubCount(pub.name);
@@ -63,7 +85,7 @@
                 alert("Musíte být přihlášeni, abyste se mohli připojit do hospody.");
                 return;
             }
-        
+
             fetch('/toggle_pub', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -103,6 +125,27 @@
             .catch(err => console.error("Error fetching pub count:", err));
         }
 
+        function toggleLike(pubName) {
+            if (!currentUser) {
+                alert("Musíte být přihlášeni, abyste mohli lajknout hospodu.");
+                return;
+            }
+
+            fetch('/toggle_like', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: pubName })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const normalizedName = pubName.replace(/\s/g, '_');
+                    const button = document.querySelector(`#like_button_${normalizedName}`);
+                    button.textContent = data.action === 'liked' ? 'Odebrat like' : 'Lajkni hospodu';
+                }
+            });
+        }
+
         // Real-time aktualizace počtu lidí v hospodě
         socket.on('update_pub_count', function(data) {
             const normalizedName = data.pub_name.replace(/\s/g, '_');
@@ -111,6 +154,15 @@
                 countElement.textContent = data.new_count;
             }
         });
+
+        socket.on('update_like_count', function(data) {
+            const normalizedName = data.pub_name.replace(/\s/g, '_');
+            const likeCountElement = document.querySelector(`#like_count_${normalizedName}`);
+            if (likeCountElement) {
+                likeCountElement.textContent = data.new_like_count;
+            }
+        });
+
     </script>
 </body>
 </html>

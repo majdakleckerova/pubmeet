@@ -2,6 +2,7 @@ from flask import Flask
 from flask_login import LoginManager
 from app.map import map_bp
 from app.routes import auth_bp
+from app.db.neo4j import neo4j_bp
 from app.extensions import socketio
 from app.db.neo4j import get_neo4j_session
 from app.models.user import User
@@ -24,6 +25,7 @@ def create_app():
     # Registrace blueprintů
     app.register_blueprint(map_bp)
     app.register_blueprint(auth_bp)
+    app.register_blueprint(neo4j_bp)
 
     # Inicializace Flask-Login
     login_manager = LoginManager()
