@@ -1,0 +1,79 @@
+{% extends "sablona.html" %}
+
+{% block main %}
+<body>
+    <h1>Upravit svůj profil</h1>
+    {% if current_user.is_authenticated %}
+        <p style="font-size: 18px; font-weight: bold;">Username: {{ current_user.username }}</p>
+
+        <form action="{{ url_for('auth.edit_profile') }}" method="POST" enctype="multipart/form-data">
+
+            <div style="margin-bottom: 20px;">
+                <label for="gender" style="font-size: 18px; font-weight: bold;">Pohlaví:</label>
+                <select id="gender" name="gender" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 15px;">
+                    <option value="male">Muž</option>
+                    <option value="female">Žena</option>
+                    <option value="other">Jiné</option>
+                </select>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label for="birthdate" style="font-size: 18px; font-weight: bold;">Datum narození:</label>
+                <input type="date" id="birthdate" name="birthdate" 
+                    style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 15px;">
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label for="zodiac" style="font-size: 18px; font-weight: bold;">Znamení zvěrokruhu:</label>
+                <select id="zodiac" name="zodiac" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 15px;">
+                    <option value="aries">Beran</option>
+                    <option value="taurus">Býk</option>
+                    <option value="gemini">Blíženci</option>
+                    <option value="cancer">Rak</option>
+                    <option value="leo">Lev</option>
+                    <option value="virgo">Panna</option>
+                    <option value="libra">Váhy</option>
+                    <option value="scorpio">Štír</option>
+                    <option value="sagittarius">Střelec</option>
+                    <option value="capricorn">Kozoroh</option>
+                    <option value="aquarius">Vodnář</option>
+                    <option value="pisces">Ryby</option>
+                </select>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label for="relationship_status" style="font-size: 18px; font-weight: bold;">Stav:</label>
+                <select id="relationship_status" name="relationship_status" 
+                        style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 15px;">
+                    <option value="single">Single</option>
+                    <option value="in_a_relationship">Zadaný/Zadaná</option>
+                    <option value="complicated">Je to komplikované</option>
+                </select>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label for="bio" style="font-size: 18px; font-weight: bold;">Bio:</label>
+                <textarea id="bio" name="bio" maxlength="50" 
+                        style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 15px; height: 100px;"></textarea>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label for="profile_photo" style="font-size: 18px; font-weight: bold;">Profilová fotka:</label>
+                <input type="file" id="profile_photo" name="profile_photo" accept="image/*" 
+                    style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 15px;">
+            </div>
+
+            <div>
+                <button type="submit" 
+                        style="background-color: #333; color: white; padding: 15px 30px; border: none; border-radius: 5px; cursor: pointer;">
+                        Aktualizovat profil
+                </button>
+            </div>
+        </form>
+    {% else %}
+        <p>Nejste přihlášen.</p>
+    {% endif %}
+</body>
+</html>
+{% endblock %}
+

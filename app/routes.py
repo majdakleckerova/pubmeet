@@ -49,9 +49,18 @@ def register():
             flash("Uživatelské jméno již existuje.")
             return redirect(url_for('auth.register'))
 
+
         neo4j_session.run(
-            "CREATE (u:User {username: $username, email: $email, password: $password, profile_photo: $profile_photo})",
-            username=username, email=email, password=hashed_password, profile_photo=photo_filename
+            "CREATE (u:User {username: $username, email: $email, password: $password, profile_photo: $profile_photo, gender: $gender, birthdate: $birthdate, zodiac: $zodiac, relationship_status: $relationship_status, bio: $bio})",
+            username=username,
+            email=email, 
+            password=hashed_password, 
+            profile_photo="default.png",
+            gender= None,  
+            birthdate=None,  
+            bio=None,  
+            relationship_status=None,  
+            zodiac=None
         )
 
         flash("Registrace proběhla úspěšně. Nyní se můžete přihlásit.")
@@ -93,6 +102,64 @@ def login():
         return redirect(url_for('auth.profil'))
 
     return render_template('login.html')
+
+
+@auth_bp.route('/edit_profile', methods=["GET","POST"])
+@login_required
+def edit_profile():
+    if request.method == "POST":
+        gender = request.form['gender']
+        birth_date = request.form['birth_date']
+        zodiac = request.form['zodiac']
+        relationship_status = request.form['relationship_status']
+        bio = request.form['bio']
+        profile_photo = request.files.get("profile_photo")
+
+        photo_filename = current_user.profile_photo  # Pokud uživatel nemění fotku, použije se současná
+        if profile_photo and allowed_file(profile_photo.filename):
+            file_extension = profile_photo.filename.rsplit('.', 1)[1].lower()
+            unique_filename = f"{uuid.uuid4().hex}.{file_extension}"
+            filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], unique_filename)       
+            try:
+                profile_photo.save(filepath)
+                photo_filename = unique_filename 
+            except Exception as e:
+                flash("Nepodařilo se uložit profilovou fotku.")
+                return redirect(url_for('auth.edit_profile'))
+
+
+        with get_neo4j_session() as session:
+                query = "MATCH (u:User {username: $username}) SET "
+                params = {'username': current_user.username}
+                
+                if gender:
+                    query += "u.gender = $gender, "
+                    params['gender'] = gender
+                if birth_date:
+                    query += "u.birthdate = $birth_date, "
+                    params['birth_date'] = birth_date
+                if zodiac:
+                    query += "u.zodiac = $zodiac, "
+                    params['zodiac'] = zodiac
+                if relationship_status:
+                    query += "u.relationship_status = $relationship_status, "
+                    params['relationship_status'] = relationship_status
+                if bio:
+                    query += "u.bio = $bio, "
+                    params['bio'] = bio
+                if profile_photo:
+                    query += "u.profile_photo = $profile_photo, "
+                    params['profile_photo'] = photo_filename
+                
+                query = query.rstrip(", ")
+                session.run(query, params)
+        
+        flash("Profil byl úspěšně aktualizován!")
+        return redirect(url_for('auth.profil'))
+
+    return render_template('edit_profile.html')
+
+
 @auth_bp.route('/logout')
 @login_required
 def logout():
@@ -124,3 +191,4 @@ def mapik():
 @login_required
 def chabri():
     return render_template("chabri.html")
+

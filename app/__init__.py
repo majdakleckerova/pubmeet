@@ -39,7 +39,16 @@ def create_app():
             user_data = result.single()
             if user_data:
                 user = user_data['u']
-                return User(username=user['username'], password_hash=user['password'], email=user['email'])
+                return User(username=user['username'],
+                            password_hash=user['password'],
+                            email=user['email'],
+                            gender=user["gender"],
+                            birthdate=user["birthdate"],
+                            zodiac=user["zodiac"],
+                            relationship_status=user["relationship_status"],
+                            bio=user["bio"],
+                            profile_photo=user['profile_photo']
+                            )
             return None
 
     # Inicializace Socket.IO

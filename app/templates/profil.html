@@ -18,6 +18,26 @@
             {% endif %}
         </div>
         
+        <div style="margin-top: 20px;">
+            <a href="{{ url_for('auth.edit_profile') }}" class="btn" style="
+                display: inline-block;
+                padding: 10px 20px;
+                font-size: 16px;
+                color: #fff;
+                background-color: #4a4a4a; 
+                text-decoration: none;
+                border-radius: 5px;
+                transition: background-color 0.3s ease;">
+                Upravit profil
+            </a>
+        </div>
+        
+        <style>
+            a.btn:hover {
+                background-color: #333; 
+            }
+        </style>
+
     {% else %}
         <p>Nejste přihlášen.</p>
     {% endif %}
