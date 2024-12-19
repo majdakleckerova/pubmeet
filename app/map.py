@@ -191,5 +191,22 @@ def get_liked_pubs():
     return jsonify(success=False, message="User not authenticated"), 401
 
 
+@map_bp.route('/get_pub_visitors', methods=['POST'])
+def get_pub_visitors():
+    try:
+        data = request.json
+        pub_name = data['name']
+        with neo4j_driver.session() as session:
+            result = session.run("""
+                MATCH (p:Pub {name: $pub_name})<-[:VISITS]-(u:User)
+                RETURN u.username AS username, u.profile_photo AS profile_picture
+            """, pub_name=pub_name)
+            visitors = [{"username": record["username"], "profile_picture": record["profile_picture"]} for record in result]
+        return jsonify(success=True, visitors=visitors)
+    except Exception as e:
+        print(f"Error in get_pub_visitors: {e}")
+        return jsonify(success=False, error="An error occurred"), 500
+
+
 
 
