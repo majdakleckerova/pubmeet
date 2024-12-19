@@ -43,6 +43,12 @@
             background-color: #e0e0e0;
             cursor: not-allowed;
         }
+
+        .friend-request-sent {
+            background-color: #4CAF50;
+            color: white;
+            cursor: not-allowed;
+        }
     </style>
 
     <h1>Seznam uživatelů</h1>
@@ -59,9 +65,40 @@
             </div>
             <div>
                 <button disabled>Zobrazit profil</button>
-                <button disabled>Přidat jako přítele</button>
+                {% if user.username != current_user.username %}
+                <button id="friend-request-{{ user.username }}" onclick="sendFriendRequest('{{ user.username }}')">
+                    Poslat žádost o přátelství
+                </button>
+                {% endif %}
             </div>
         </li>
         {% endfor %}
     </ul>
+
+    <script>
+        function sendFriendRequest(username) {
+            const button = document.getElementById(`friend-request-${username}`);
+            button.disabled = true;
+
+            fetch('/send_friend_request', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username2: username })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                    button.disabled = false;
+                } else {
+                    button.textContent = "Žádost odeslána";
+                    button.classList.add('friend-request-sent');
+                }
+            })
+            .catch(error => {
+                console.error("Chyba při odesílání žádosti o přátelství:", error);
+                button.disabled = false;
+            });
+        }
+    </script>
 {% endblock %}

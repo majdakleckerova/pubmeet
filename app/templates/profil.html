@@ -36,12 +36,96 @@
             a.btn:hover {
                 background-color: #333; 
             }
+            .friend-request, .friend-list {
+                margin-top: 20px;
+                padding: 15px;
+                border: 1px solid #ddd;
+                border-radius: 5px;
+                background-color: #f9f9f9;
+            }
+            .friend-request h3, .friend-list h3 {
+                margin-top: 0;
+            }
+            .friend-actions button {
+                margin-right: 10px;
+                padding: 5px 10px;
+                border: none;
+                border-radius: 5px;
+                cursor: pointer;
+                font-size: 14px;
+            }
+            .accept-btn {
+                background-color: #4CAF50;
+                color: white;
+            }
+            .reject-btn {
+                background-color: #f44336;
+                color: white;
+            }
+            .friend-actions button:disabled {
+                background-color: #ddd;
+                cursor: not-allowed;
+            }
         </style>
+
+        <!-- Žádosti o přátelství -->
+        <div class="friend-request">
+            <h3>Žádosti o přátelství</h3>
+            {% if friend_requests %}
+                <ul>
+                    {% for request in friend_requests %}
+                    <li>
+                        <p><strong>{{ request }}</strong> vás požádal(a) o přátelství.</p>
+                        <div class="friend-actions">
+                            <button class="accept-btn" onclick="handleFriendRequest('{{ request }}', 'accept')">Přijmout</button>
+                            <button class="reject-btn" onclick="handleFriendRequest('{{ request }}', 'reject')">Odmítnout</button>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>Žádné nové žádosti o přátelství.</p>
+            {% endif %}
+        </div>
+
+        <!-- Seznam přátel -->
+        <div class="friend-list">
+            <h3>Seznam přátel</h3>
+            {% if friends %}
+                <ul>
+                    {% for friend in friends %}
+                    <li>
+                        <p><strong>{{ friend }}</strong></p>
+                    </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>Nemáte žádné přátele.</p>
+            {% endif %}
+        </div>
+
+        <script>
+            function handleFriendRequest(username, action) {
+                fetch(`/handle_friend_request`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: username, action: action })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert(data.message);
+                        location.reload(); // Obnoví stránku pro aktualizaci seznamu
+                    } else {
+                        alert("Chyba: " + data.error);
+                    }
+                })
+                .catch(err => console.error("Chyba při zpracování žádosti:", err));
+            }
+        </script>
 
     {% else %}
         <p>Nejste přihlášen.</p>
     {% endif %}
 </body>
-</html>
 {% endblock %}
-

@@ -6,6 +6,21 @@ from app.models.user import User
 import os
 import uuid
 
+from neo4j import GraphDatabase
+from dotenv import load_dotenv
+import os
+import pandas as pd
+
+from flask import Blueprint, jsonify, request
+from flask_login import current_user
+load_dotenv()
+neo4j_driver = GraphDatabase.driver(
+    os.getenv('NEO4J_URI'),
+    auth=(os.getenv('NEO4J_USER'), os.getenv('NEO4J_PASSWORD'))
+)
+def get_neo4j_session():
+    return neo4j_driver.session()
+
 auth_bp = Blueprint('auth', __name__)
 
 def allowed_file(filename):
@@ -174,10 +189,33 @@ def logout():
     return redirect(url_for('auth.login'))
 
 
-@auth_bp.route('/profil')
+@auth_bp.route('/profil', methods=['GET'])
 @login_required
-def profil():
-    return render_template('profil.html')
+def profile():
+    if not current_user.is_authenticated:
+        return redirect(url_for('auth.login'))
+
+    with neo4j_driver.session() as session:
+        # Načte žádosti o přátelství
+        query = """
+        MATCH (u:User)-[r:FRIEND_REQUEST {status: 'REQUESTED'}]->(v:User)
+        WHERE v.username = $username
+        RETURN u.username AS username
+        """
+        result = session.run(query, username=current_user.username)
+        friend_requests = [record["username"] for record in result]
+
+        # Načte přátele
+        query_friends = """
+        MATCH (u:User)-[:FRIEND]-(f:User)
+        WHERE u.username = $username
+        RETURN f.username AS username
+        """
+        result_friends = session.run(query_friends, username=current_user.username)
+        friends = [record["username"] for record in result_friends]
+
+    return render_template('profil.html', friend_requests=friend_requests, friends=friends)
+
 
 
 @auth_bp.route("/")
