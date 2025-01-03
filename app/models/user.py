@@ -1,16 +1,15 @@
 from flask_login import UserMixin
 
 class User(UserMixin):
-    def __init__(self, username, password_hash, email, gender=None, birthdate=None, zodiac=None,relationship_status=None, bio=None, profile_photo=None):
+    def __init__(self, username,email, password_hash, nickname=None, birthdate=None, favourite_drink=None, bio=None, profile_photo=None):
         self.username = username
-        self.password_hash = password_hash
         self.email = email
+        self.password_hash = password_hash
 
-        #úprava profilu
-        self.gender = gender
+        # Úprava profilu
+        self.nickname = nickname
         self.birthdate = birthdate
-        self.zodiac = zodiac
-        self.relationship_status = relationship_status
+        self.favourite_drink = favourite_drink
         self.bio = bio
         self.profile_photo = profile_photo
 

@@ -43,13 +43,12 @@ def create_app():
                 user = user_data['u']
                 return User(username=user['username'],
                             password_hash=user['password'],
-                            email=user['email'],
-                            gender=user["gender"],
-                            birthdate=user["birthdate"],
-                            zodiac=user["zodiac"],
-                            relationship_status=user["relationship_status"],
-                            bio=user["bio"],
-                            profile_photo=user['profile_photo']
+                            email=user['email'],  # Zachováno
+                            nickname=user.get('nickname'),
+                            birthdate=user.get('birthdate'),
+                            favourite_drink=user.get('favourite_drink'),
+                            bio=user.get('bio'),
+                            profile_photo=user.get('profile_photo')
                             )
             return None
 

@@ -34,13 +34,11 @@ def register():
         email = request.form['email']
         password = request.form['password']
 
-
         if not username or not email or not password:
             flash("Vyplňte všechna pole.")
             return redirect(url_for('auth.register'))
 
         hashed_password = generate_password_hash(password)
-
 
         neo4j_session = get_neo4j_session()
         result = neo4j_session.run(
@@ -51,24 +49,75 @@ def register():
             flash("Uživatelské jméno již existuje.")
             return redirect(url_for('auth.register'))
 
-
         neo4j_session.run(
-            "CREATE (u:User {username: $username, email: $email, password: $password, profile_photo: $profile_photo, gender: $gender, birthdate: $birthdate, zodiac: $zodiac, relationship_status: $relationship_status, bio: $bio})",
+            "CREATE (u:User {username: $username, email: $email, password: $password, "
+            "nickname: $nickname, birthdate: $birthdate, favourite_drink: $favourite_drink, "
+            "bio: $bio, profile_photo: $profile_photo})",
             username=username,
-            email=email, 
-            password=hashed_password, 
-            profile_photo="default.png",
-            gender= None,  
-            birthdate=None,  
-            bio=None,  
-            relationship_status=None,  
-            zodiac=None
+            email=email,
+            password=hashed_password,
+            nickname=None,
+            birthdate=None,
+            favourite_drink=None,
+            bio=None,
+            profile_photo="default.png"
         )
 
         flash("Registrace proběhla úspěšně. Nyní se můžete přihlásit.")
         return redirect(url_for('auth.login'))
 
     return render_template('register.html')
+
+
+@auth_bp.route('/edit_profile', methods=["GET", "POST"])
+@login_required
+def edit_profile():
+    if request.method == "POST":
+        nickname = request.form.get('nickname')
+        birthdate = request.form.get('birthdate')
+        favourite_drink = request.form.get('favourite_drink')
+        bio = request.form.get('bio')
+        profile_photo = request.files.get("profile_photo")
+
+        photo_filename = current_user.profile_photo  # Pokud uživatel nemění fotku, použije se současná
+        if profile_photo and allowed_file(profile_photo.filename):
+            file_extension = profile_photo.filename.rsplit('.', 1)[1].lower()
+            unique_filename = f"{uuid.uuid4().hex}.{file_extension}"
+            filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], unique_filename)
+            try:
+                profile_photo.save(filepath)
+                photo_filename = unique_filename
+            except Exception as e:
+                flash("Nepodařilo se uložit profilovou fotku.")
+                return redirect(url_for('auth.edit_profile'))
+
+        with get_neo4j_session() as session:
+            query = "MATCH (u:User {username: $username}) SET "
+            params = {'username': current_user.username}
+
+            if nickname:
+                query += "u.nickname = $nickname, "
+                params['nickname'] = nickname
+            if birthdate:
+                query += "u.birthdate = $birthdate, "
+                params['birthdate'] = birthdate
+            if favourite_drink:
+                query += "u.favourite_drink = $favourite_drink, "
+                params['favourite_drink'] = favourite_drink
+            if bio:
+                query += "u.bio = $bio, "
+                params['bio'] = bio
+            if profile_photo:
+                query += "u.profile_photo = $profile_photo, "
+                params['profile_photo'] = photo_filename
+
+            query = query.rstrip(", ")
+            session.run(query, params)
+
+        flash("Profil byl úspěšně aktualizován!")
+        return redirect(url_for('auth.profile'))
+
+    return render_template('edit_profile.html')
 
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
@@ -84,7 +133,7 @@ def login():
         # Načti uživatele z Neo4j
         with get_neo4j_session() as session:
             result = session.run(
-                "MATCH (u:User {username: $username}) RETURN u.password AS password",
+                "MATCH (u:User {username: $username}) RETURN u.password AS password, u.email AS email",
                 username=username
             )
             user = result.single()
@@ -99,67 +148,12 @@ def login():
                 return redirect(url_for('auth.login'))
 
         # Přihlásit uživatele pomocí Flask-Login
-        login_user(User(username=username, password_hash=stored_password, email=""))
+        login_user(User(username=username, password_hash=stored_password, email=user['email']))
         flash(f"Vítejte, {username}!")
-        return redirect(url_for('auth.profil'))
+        return redirect(url_for('auth.profile'))
 
     return render_template('login.html')
 
-
-@auth_bp.route('/edit_profile', methods=["GET","POST"])
-@login_required
-def edit_profile():
-    if request.method == "POST":
-        gender = request.form['gender']
-        birth_date = request.form['birth_date']
-        zodiac = request.form['zodiac']
-        relationship_status = request.form['relationship_status']
-        bio = request.form['bio']
-        profile_photo = request.files.get("profile_photo")
-
-        photo_filename = current_user.profile_photo  # Pokud uživatel nemění fotku, použije se současná
-        if profile_photo and allowed_file(profile_photo.filename):
-            file_extension = profile_photo.filename.rsplit('.', 1)[1].lower()
-            unique_filename = f"{uuid.uuid4().hex}.{file_extension}"
-            filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], unique_filename)       
-            try:
-                profile_photo.save(filepath)
-                photo_filename = unique_filename 
-            except Exception as e:
-                flash("Nepodařilo se uložit profilovou fotku.")
-                return redirect(url_for('auth.edit_profile'))
-
-
-        with get_neo4j_session() as session:
-                query = "MATCH (u:User {username: $username}) SET "
-                params = {'username': current_user.username}
-                
-                if gender:
-                    query += "u.gender = $gender, "
-                    params['gender'] = gender
-                if birth_date:
-                    query += "u.birthdate = $birth_date, "
-                    params['birth_date'] = birth_date
-                if zodiac:
-                    query += "u.zodiac = $zodiac, "
-                    params['zodiac'] = zodiac
-                if relationship_status:
-                    query += "u.relationship_status = $relationship_status, "
-                    params['relationship_status'] = relationship_status
-                if bio:
-                    query += "u.bio = $bio, "
-                    params['bio'] = bio
-                if profile_photo:
-                    query += "u.profile_photo = $profile_photo, "
-                    params['profile_photo'] = photo_filename
-                
-                query = query.rstrip(", ")
-                session.run(query, params)
-        
-        flash("Profil byl úspěšně aktualizován!")
-        return redirect(url_for('auth.profil'))
-
-    return render_template('edit_profile.html')
 
 @auth_bp.route("/uzivatele")
 @login_required
