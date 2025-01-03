@@ -20,4 +20,4 @@
     - možná přidat něco do popupu
  
 - **backend**:
-    - upravit žádosti o přátelství 
+    - ~~upravit žádosti o přátelství~~
