@@ -9,7 +9,8 @@
     - seznam oblíbených hospod
     - seznam přátel (+ zobrazit profil)
     - aktuální navštěvovaná hospoda
-    - pole s profilem - přezdívka, bio, atd.
+    - ~~pole s profilem - přezdívka, bio, atd.~~
+    - mini profilovky k přátelům + žádostem
  
 - **uživatelé**:
     - zprovoznit zobrazit profil (vytvořit templates automaticky každému novému uživateli s polem s profilem + přátelé + fav hospody + přidat do přátel + aktuální lokace, když přátelé)
