@@ -80,7 +80,22 @@ def send_friend_request():
     username1 = current_user.username
 
     with neo4j_driver.session() as session:
-        # Vytvoří žádost o přátelství
+        # Nejprve zkontrolujeme, zda už mezi uživateli neexistuje vztah FRIEND_REQUEST nebo FRIENDS
+        query = """
+        MATCH (u1:User {username: $username1}), (u2:User {username: $username2})
+        OPTIONAL MATCH (u1)-[r1:FRIEND_REQUEST]->(u2)
+        OPTIONAL MATCH (u2)-[r2:FRIEND_REQUEST]->(u1)
+        OPTIONAL MATCH (u1)-[r3:FRIEND]->(u2)
+        OPTIONAL MATCH (u2)-[r4:FRIEND]->(u1)
+        RETURN COUNT(r1) + COUNT(r2) + COUNT(r3) + COUNT(r4) > 0 AS relationship_exists
+        """
+        result = session.run(query, username1=username1, username2=username2)
+        relationship_exists = result.single()[0]
+
+        if relationship_exists:
+            return jsonify({"error": "Mezi těmito uživateli již existuje žádost o přátelství nebo přátelství."}), 400
+
+        # Pokud žádný vztah neexistuje, vytvoříme novou žádost o přátelství
         query = """
         MATCH (u1:User {username: $username1}), (u2:User {username: $username2})
         MERGE (u1)-[r:FRIEND_REQUEST {status: 'REQUESTED'}]->(u2)
@@ -90,6 +105,7 @@ def send_friend_request():
         if result.peek() is None:
             return jsonify({"error": "Uživatelé nebyli nalezeni."}), 404
         return jsonify({"message": f"Žádost o přátelství byla odeslána uživateli {username2}."}), 200
+
 
 @neo4j_bp.route('/accept_friend_request', methods=['POST'])
 def accept_friend_request():
@@ -105,7 +121,18 @@ def accept_friend_request():
     username2 = current_user.username
 
     with neo4j_driver.session() as session:
-        # Potvrzení žádosti o přátelství
+        # Nejprve zkontrolujeme, zda žádost o přátelství existuje
+        query = """
+        MATCH (u1:User {username: $username1})-[r:FRIEND_REQUEST {status: 'REQUESTED'}]->(u2:User {username: $username2})
+        RETURN COUNT(r) > 0 AS exists_request
+        """
+        result = session.run(query, username1=username1, username2=username2)
+        request_exists = result.single()[0]
+
+        if not request_exists:
+            return jsonify({"error": "Žádost o přátelství nebyla nalezena."}), 404
+
+        # Potvrďte žádost a vytvořte vztah FRIENDS
         query = """
         MATCH (u1:User {username: $username1})-[r:FRIEND_REQUEST {status: 'REQUESTED'}]->(u2:User {username: $username2})
         SET r.status = 'CONFIRMED'
@@ -114,7 +141,7 @@ def accept_friend_request():
         """
         result = session.run(query, username1=username1, username2=username2)
         if result.peek() is None:
-            return jsonify({"error": "Žádost o přátelství nebyla nalezena."}), 404
+            return jsonify({"error": "Chyba při potvrzování přátelství."}), 500
         return jsonify({"message": f"Přátelství mezi {username1} a {username2} bylo potvrzeno."}), 200
 
 @neo4j_bp.route('/handle_friend_request', methods=['POST'])
@@ -134,7 +161,18 @@ def handle_friend_request():
 
     with neo4j_driver.session() as session:
         if action == 'accept':
-            # Změna statusu žádosti na 'CONFIRMED' a vytvoření přátelského vztahu
+            # Zkontrolujeme, jestli už mezi uživateli neexistuje přátelství
+            query = """
+            MATCH (u1:User {username: $username1})-[r:FRIEND_REQUEST {status: 'REQUESTED'}]->(u2:User {username: $username2})
+            RETURN COUNT(r) > 0 AS exists_request
+            """
+            result = session.run(query, username1=username, username2=current_user.username)
+            request_exists = result.single()[0]
+
+            if not request_exists:
+                return jsonify({"error": "Žádost o přátelství nebyla nalezena."}), 404
+
+            # Potvrzení žádosti a vytvoření přátelského vztahu
             query = """
             MATCH (u1:User {username: $username1})-[r:FRIEND_REQUEST {status: 'REQUESTED'}]->(u2:User {username: $username2})
             SET r.status = 'CONFIRMED'
@@ -143,7 +181,18 @@ def handle_friend_request():
             """
             result = session.run(query, username1=username, username2=current_user.username)
         elif action == 'reject':
-            # Odstranění žádosti o přátelství
+            # Zkontrolujeme, zda žádost o přátelství existuje, pokud ano, odstraníme ji
+            query = """
+            MATCH (u1:User {username: $username1})-[r:FRIEND_REQUEST {status: 'REQUESTED'}]->(u2:User {username: $username2})
+            RETURN COUNT(r) > 0 AS exists_request
+            """
+            result = session.run(query, username1=username, username2=current_user.username)
+            request_exists = result.single()[0]
+
+            if not request_exists:
+                return jsonify({"error": "Žádost o přátelství nebyla nalezena."}), 404
+
+            # Odstraníme žádost o přátelství
             query = """
             MATCH (u1:User {username: $username1})-[r:FRIEND_REQUEST {status: 'REQUESTED'}]->(u2:User {username: $username2})
             DELETE r
@@ -151,6 +200,3 @@ def handle_friend_request():
             result = session.run(query, username1=username, username2=current_user.username)
 
     return jsonify({"success": True, "message": f"Akce {action} byla úspěšně provedena."})
-
-
-
