@@ -47,8 +47,17 @@ result
 
 def get_users():
     with neo4j_driver.session() as session:
-        result = session.run("MATCH (u:User) RETURN u.username AS username, u.email AS email, u.id AS id")
+        result = session.run("MATCH (u:User) RETURN u.username AS username, u.email AS email, u.id AS id, u.profile_photo AS profile_photo")
         return result.data()
+    
+def get_friends(user_id):
+    with neo4j_driver.session() as session:
+        result = session.run("""
+            MATCH (u:User {id: $user_id})-[:FRIEND]->(f:User)
+            RETURN f.username AS username, f.email AS email, f.id AS id, f.profile_photo AS profile_photo
+        """, user_id=user_id)
+        return result.data()
+
     
 #def get_user_by_id(user_id):
 #    with neo4j_driver.session() as session:
@@ -142,3 +151,6 @@ def handle_friend_request():
             result = session.run(query, username1=username, username2=current_user.username)
 
     return jsonify({"success": True, "message": f"Akce {action} byla úspěšně provedena."})
+
+
+

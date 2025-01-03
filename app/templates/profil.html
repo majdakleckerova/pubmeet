@@ -1,107 +1,101 @@
 {% extends "sablona.html" %}
-
-{% block subtitle %}
-    <title>Profil</title>
-{% endblock %}
-
 {% block main %}
 <body>
-    <h1>Profil uživatele</h1>
     {% if current_user.is_authenticated %}
-        <p>Jste přihlášen jako: {{ current_user.username }}</p>
-
-        <div>
-            {% if current_user.profile_photo %}
-                <img src="{{ url_for('static', filename='uploads/' + current_user.profile_photo) }}" alt="Profilová fotka" style="width: 150px; height: 150px; border-radius: 50%;">
-            {% else %}
-                <img src="{{ url_for('static', filename='uploads/default.png') }}" alt="Výchozí profilová fotka" style="width: 150px; height: 150px; border-radius: 50%;">
-            {% endif %}
-        </div>
-        
-        <div style="margin-top: 20px;">
-            <a href="{{ url_for('auth.edit_profile') }}" class="btn" style="
-                display: inline-block;
-                padding: 10px 20px;
-                font-size: 16px;
-                color: #fff;
-                background-color: #4a4a4a; 
-                text-decoration: none;
-                border-radius: 5px;
-                transition: background-color 0.3s ease;">
-                Upravit profil
-            </a>
-        </div>
-        
-        <style>
-            a.btn:hover {
-                background-color: #333; 
-            }
-            .friend-request, .friend-list {
-                margin-top: 20px;
-                padding: 15px;
-                border: 1px solid #ddd;
-                border-radius: 5px;
-                background-color: #f9f9f9;
-            }
-            .friend-request h3, .friend-list h3 {
-                margin-top: 0;
-            }
-            .friend-actions button {
-                margin-right: 10px;
-                padding: 5px 10px;
-                border: none;
-                border-radius: 5px;
-                cursor: pointer;
-                font-size: 14px;
-            }
-            .accept-btn {
-                background-color: #4CAF50;
-                color: white;
-            }
-            .reject-btn {
-                background-color: #f44336;
-                color: white;
-            }
-            .friend-actions button:disabled {
-                background-color: #ddd;
-                cursor: not-allowed;
-            }
-        </style>
-
-        <!-- Žádosti o přátelství -->
-        <div class="friend-request">
-            <h3>Žádosti o přátelství</h3>
-            {% if friend_requests %}
-                <ul>
-                    {% for request in friend_requests %}
-                    <li>
-                        <p><strong>{{ request }}</strong> vás požádal(a) o přátelství.</p>
-                        <div class="friend-actions">
-                            <button class="accept-btn" onclick="handleFriendRequest('{{ request }}', 'accept')">Přijmout</button>
-                            <button class="reject-btn" onclick="handleFriendRequest('{{ request }}', 'reject')">Odmítnout</button>
-                        </div>
-                    </li>
-                    {% endfor %}
-                </ul>
-            {% else %}
-                <p>Žádné nové žádosti o přátelství.</p>
-            {% endif %}
+        <!-- Horní část profilu -->
+        <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 30px; border-bottom: 2px solid #bbb; padding-bottom: 30px; margin-left: 20px; max-width: 1000px;">
+            <div style="display: flex; align-items: center; width: 100%; margin-bottom: 20px;">
+                <div>
+                    {% if current_user.profile_photo %}
+                        <img src="{{ url_for('static', filename='uploads/' + current_user.profile_photo) }}" 
+                             alt="Profilová fotka" 
+                             style="width: 200px; height: 200px; border-radius: 50%; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);">
+                    {% else %}
+                        <img src="{{ url_for('static', filename='uploads/default.png') }}" 
+                             alt="Výchozí profilová fotka" 
+                             style="width: 200px; height: 200px; border-radius: 50%; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);">
+                    {% endif %}
+                </div>
+                <div style="margin-left: 30px; flex-grow: 1;">
+                    <h1 style="margin: 0; font-size: 32px; font-weight: bold; color: #333;">{{ current_user.nickname }}</h1>
+                    <p style="margin: 5px 0; color: gray; font-size: 18px;">@{{ current_user.username }}</p>
+                </div>
+                <div style="margin-left: 50px;">
+                    <a href="{{ url_for('auth.edit_profile') }}" class="btn" style="
+                        display: inline-block;
+                        padding: 12px 24px;
+                        font-size: 16px;
+                        color: #fff;
+                        background-color: #4a4a4a;
+                        text-decoration: none;
+                        border-radius: 5px;
+                        transition: background-color 0.3s ease;">
+                        Upravit profil
+                    </a>
+                </div>
+            </div>
+           <!-- Bio -->
+            <div style="font-weight: bold; color: #555; width: 100%; margin-top: 20px;">
+                <p style="margin: 0;">Bio:</p>
+                <p style="font-style: italic; color: #333; margin: 5px 0;">"{{ current_user.bio if current_user.bio else 'Nezadáno' }}"</p>
+            </div>
         </div>
 
-        <!-- Seznam přátel -->
-        <div class="friend-list">
-            <h3>Seznam přátel</h3>
-            {% if friends %}
-                <ul>
-                    {% for friend in friends %}
-                    <li>
-                        <p><strong>{{ friend }}</strong></p>
-                    </li>
-                    {% endfor %}
-                </ul>
-            {% else %}
-                <p>Nemáte žádné přátele.</p>
-            {% endif %}
+        <!-- Sekce s informacemi -->
+        <div style="margin-top: 20px; margin-left: 20px; max-width: 1000px; display: flex; flex-direction: column; gap: 15px;">
+            <div style="background-color: #dcdcdc; padding: 15px; border: 1px solid #bbb; border-radius: 5px;">
+                <p style="font-weight: bold; color: #555; margin: 0;">Datum narození</p>
+                <p style="margin: 5px 0; color: #333;">{{ current_user.birthdate if current_user.birthdate else 'Nezadáno' }}</p>
+            </div>
+            <div style="background-color: #dcdcdc; padding: 15px; border: 1px solid #bbb; border-radius: 5px;">
+                <p style="font-weight: bold; color: #555; margin: 0;">Oblíbený drink</p>
+                <p style="margin: 5px 0; color: #333;">{{ current_user.favourite_drink if current_user.favourite_drink else 'Nezadáno' }}</p>
+            </div>
+        </div>
+
+        <!-- Spodní část s přáteli a žádostmi -->
+        <div style="display: flex; justify-content: center; gap: 20px; margin-top: 40px; max-width: 1000px;">
+            <!-- Seznam přátel -->
+            <div style="flex: 1; max-height: 300px; overflow-y: auto; border: 1px solid #dcdcdc; border-radius: 5px; padding: 15px; background-color: #dcdcdc;">
+                <h3>Seznam přátel</h3>
+                {% if friends %}
+                    <ul style="padding-left: 20px;">
+                        {% for friend in friends %}
+                        <li>
+                            <p><strong>{{ friend }}</strong></p>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p>Nemáte žádné přátele.</p>
+                {% endif %}
+            </div>
+
+            <!-- Žádosti o přátelství -->
+            <div style="flex: 1; max-height: 300px; overflow-y: auto; border: 1px solid #dcdcdc; border-radius: 5px; padding: 15px; background-color: #dcdcdc;">
+                <h3>Žádosti o přátelství</h3>
+                {% if friend_requests %}
+                    <ul style="padding-left: 20px;">
+                        {% for request in friend_requests %}
+                        <li>
+                            <p><strong>{{ request }}</strong> vás požádal(a) o přátelství.</p>
+                            <div class="friend-actions" style="margin-top: 10px;">
+                                <button class="accept-btn" onclick="handleFriendRequest('{{ request }}', 'accept')" style="
+                                    background-color: #4CAF50; color: white; padding: 5px 10px; border: none; border-radius: 5px; cursor: pointer; font-size: 14px; margin-right: 10px;">
+                                    Přijmout
+                                </button>
+                                <button class="reject-btn" onclick="handleFriendRequest('{{ request }}', 'reject')" style="
+                                    background-color: #f44336; color: white; padding: 5px 10px; border: none; border-radius: 5px; cursor: pointer; font-size: 14px;">
+                                    Odmítnout
+                                </button>
+                            </div>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p>Žádné nové žádosti o přátelství.</p>
+                {% endif %}
+            </div>
         </div>
 
         <script>
@@ -115,7 +109,7 @@
                 .then(data => {
                     if (data.success) {
                         alert(data.message);
-                        location.reload(); // Obnoví stránku pro aktualizaci seznamu
+                        location.reload();
                     } else {
                         alert("Chyba: " + data.error);
                     }
@@ -123,7 +117,6 @@
                 .catch(err => console.error("Chyba při zpracování žádosti:", err));
             }
         </script>
-
     {% else %}
         <p>Nejste přihlášen.</p>
     {% endif %}
