@@ -1,14 +1,22 @@
 # PubMeet
-## done
-- mapa
-- registrace
-- login
-- přidat se do hospody
-- like
+### dodělat do pondělí
+- ~~úprava profilu~~ (update do db usera) - už funguje i profilovka
+- ~~odebrat nahrání profilovky při registraci~~
+- ~~redirecty z registrace a loginu na profil~~
+- odhlášení
 
-## dodělat 
-- endpoint hospody lajknuté uživatelem - na profil uživatele
-- endpoint uživatelé co lajkli hospodu - na popup hospody
-- endpoint přidat do přátel - zobrazí se na profilu uživatele, co na to kliknul
-- zprovoznit úpravu profilu - zatim nefunguje (změnit fci v routes.py)
-- doplnit popupy hospod - otevírací doba (do excel tabulky)
+- **můj profil** :
+    - seznam oblíbených hospod
+    - seznam přátel (+ zobrazit profil)
+    - aktuální navštěvovaná hospoda
+    - pole s profilem - přezdívka, bio, atd.
+ 
+- **uživatelé**:
+    - zprovoznit zobrazit profil (vytvořit templates automaticky každému novému uživateli s polem s profilem + přátelé + fav hospody + přidat do přátel + aktuální lokace, když přátelé)
+
+- **mapa**:
+    - hezčí markery (kulatý s fotkou hospody?)
+    - možná přidat něco do popupu
+ 
+- **backend**:
+    - upravit žádosti o přátelství 
