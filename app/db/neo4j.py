@@ -47,7 +47,7 @@ result
 
 def get_users():
     with neo4j_driver.session() as session:
-        result = session.run("MATCH (u:User) RETURN u.username AS username, u.email AS email, u.id AS id, u.profile_photo AS profile_photo")
+        result = session.run("MATCH (u:User) RETURN u.username AS username, u.email AS email, u.id AS id, u.profile_photo AS profile_photo, u.bio AS bio, u.birthdate AS birthdate, u.favourite_drink AS favourite_drink, u.nickname AS nickname")
         return result.data()
     
 def get_friends(user_id):
@@ -57,6 +57,10 @@ def get_friends(user_id):
             RETURN f.username AS username, f.email AS email, f.id AS id, f.profile_photo AS profile_photo
         """, user_id=user_id)
         return result.data()
+    
+
+
+
 
     
 #def get_user_by_id(user_id):
@@ -93,7 +97,7 @@ def send_friend_request():
         relationship_exists = result.single()[0]
 
         if relationship_exists:
-            return jsonify({"error": "Mezi těmito uživateli již existuje žádost o přátelství nebo přátelství."}), 400
+            return jsonify({"error": "Mezi tebou a tímto uživatelem již existuje žádost o přátelství nebo přátelství."}), 400
 
         # Pokud žádný vztah neexistuje, vytvoříme novou žádost o přátelství
         query = """

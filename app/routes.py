@@ -162,6 +162,7 @@ def index():
     return render_template("uzivatele.html", users=users)
 
 
+
 @auth_bp.route('/logout')
 @login_required
 def logout():

@@ -80,7 +80,7 @@
         function sendFriendRequest(username) {
             const button = document.getElementById(`friend-request-${username}`);
             button.disabled = true;
-
+    
             fetch('/send_friend_request', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -102,4 +102,5 @@
             });
         }
     </script>
-{% endblock %}
+    {% endblock %}
+    
