@@ -116,6 +116,28 @@
             });
         }
 
+        function toggleLike(pubName) {
+            if (!currentUser) {
+                alert("Musíte být přihlášeni, abyste mohli lajknout hospodu.");
+                return;
+            }
+
+            fetch('/toggle_like', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: pubName })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const normalizedName = pubName.replace(/\s/g, '_');
+                    const button = document.querySelector(`#like_button_${normalizedName}`);
+                    button.textContent = data.action === 'liked' ? 'Odebrat like' : 'Lajkni hospodu';
+                    updateLikeCount(pubName); // Aktualizace počtu lajků
+                }
+            });
+        }
+
         // Funkce pro aktualizaci počtu uživatelů
         function updatePubCount(pubName) {
             fetch('/get_pub_count', {
@@ -138,13 +160,8 @@
             .catch(err => console.error("Error fetching pub count:", err));
         }
 
-        function toggleLike(pubName) {
-            if (!currentUser) {
-                alert("Musíte být přihlášeni, abyste mohli lajknout hospodu.");
-                return;
-            }
-
-            fetch('/toggle_like', {
+        function updateLikeCount(pubName) {
+            fetch('/get_like_count', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ name: pubName })
@@ -153,11 +170,18 @@
             .then(data => {
                 if (data.success) {
                     const normalizedName = pubName.replace(/\s/g, '_');
-                    const button = document.querySelector(`#like_button_${normalizedName}`);
-                    button.textContent = data.action === 'liked' ? 'Odebrat like' : 'Lajkni hospodu';
+                    const likeCountElement = document.querySelector(`#like_count_${normalizedName}`);
+                    if (likeCountElement) {
+                        likeCountElement.textContent = data.new_like_count;
+                    }
+                } else {
+                    console.error("Failed to fetch like count:", data.error);
                 }
-            });
+            })
+            .catch(err => console.error("Error fetching like count:", err));
         }
+
+
 
         function updatePubVisitors(pubName) {
             fetch('/get_pub_visitors', {
