@@ -125,6 +125,9 @@
                                             `;
                                             const popupElement = document.querySelector(`#popup_${normalizedName}`);
                                             if (popupElement) popupElement.innerHTML = popupContent;
+
+                                            // Aktualizace seznamu návštěvníků
+                                            updatePubVisitors(pub.name);
                                         }
                                     })
                                     .catch(err => console.error("Error checking if pub is liked:", err));
@@ -140,7 +143,28 @@
             });
         });
 
-
+        // Funkce pro aktualizaci návštěvníků hospody
+        function updatePubVisitors(pubName) {
+            fetch('/get_pub_visitors', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: pubName })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const normalizedName = pubName.replace(/\s/g, '_');
+                    const visitorList = document.querySelector(`#visitor_list_${normalizedName}`);
+                    visitorList.innerHTML = '<b>Návštěvníci:</b>';
+                    data.visitors.forEach(visitor => {
+                        const visitorItem = document.createElement('div');
+                        visitorItem.className = 'visitor-item';
+                        visitorItem.textContent = visitor.username;
+                        visitorList.appendChild(visitorItem);
+                    });
+                }
+            });
+        }
 
         // Připojení nebo opuštění hospody
         function togglePub(pubName) {
@@ -166,6 +190,9 @@
                     if (countElement) {
                         countElement.textContent = data.new_count;
                     }
+
+                    // Aktualizace seznamu návštěvníků
+                    updatePubVisitors(pubName);
                 }
             })
             .catch(err => console.error("Error toggling pub:", err));
