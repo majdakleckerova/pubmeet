@@ -22,7 +22,8 @@
     - možná přidat něco do popupu adresu kurzívou
     - zamčení mapy 
     - ukázat current userovi aktuálně navštěvovanou hospodu
- 
+    - at když lajknu/navštěvuju hospodu a vyjedu z toho tak když se na to vrátim at se ukáže odebrat like/opustit
+
 - **backend**:
     - ~~upravit žádosti o přátelství~~
 
