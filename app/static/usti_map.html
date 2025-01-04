@@ -7,15 +7,115 @@
         L_DISABLE_3D = false;
     </script>
     <style>
-        html, body {width: 100%; height: 100%; margin: 0; padding: 0;}
-        #map {position: absolute; top: 0; bottom: 0; right: 0; left: 0;}
-        .visitor-list {
-            margin-top: 10px;
-        }
-        .visitor-item {
-            display: block;
-            margin: 5px 0;
-        }
+        html, body {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+    }
+
+    #map {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        right: 0;
+        left: 0;
+    }
+
+    .leaflet-popup-content-wrapper {
+        width: 300px !important;
+        
+        max-width: 800px; /* Rozšíření maximální šířky */
+        max-height: 800px; /* Omezení maximální výšky */
+        overflow-y: auto; /* Posuvník pro příliš vysoký obsah */
+    }
+
+    .leaflet-popup-content {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Moderní font */
+        color: #333;
+        font-size: 15px; /* Střední velikost pro lepší čitelnost */
+        line-height: 1.6; /* Mírně větší řádkování pro lepší čitelnost */
+        letter-spacing: 0.5px; /* Mírné rozšíření písmen pro lepší přehlednost */
+    }
+
+    .leaflet-popup-content h4 {
+        font-size: 18px; /* Nadpis zůstává větší pro důraz */
+        font-weight: bold; /* Větší důraz na nadpis */
+        margin: 0 0 10px 0;
+        border-bottom: 1px solid #FFD700;
+        color: #444;
+    }
+
+    .leaflet-popup-content p {
+        margin: 8px 0; /* Vyšší mezery mezi odstavci */
+    }
+
+    .popup-details div {
+        display: flex;
+        align-items: center;
+        gap: 8px; /* Vyšší mezera mezi ikonou a textem */
+        margin-bottom: 2px; /* Mezera mezi detaily */
+    }
+
+    .popup-btn {
+        display: inline-block;
+        background-color: #FFD700;
+        color: #333;
+        border: none;
+        border-radius: 3px;
+        padding: 10px 16px; /* Větší padding pro lepší vzhled */
+        font-size: 14px; /* Velikost písma u tlačítek */
+        cursor: pointer;
+        margin: 5px;
+        height: 45px;
+        width: 150px; /* Uniformní šířka tlačítek */
+        text-align: center; /* Zarovnání textu do středu */
+        transition: background-color 0.3s ease;
+    }
+
+    .popup-btn:hover {
+        background-color: #FFC107;
+    }
+
+    .popup-buttons {
+        display: flex;
+        justify-content: flex-start; /* Tlačítka zarovnána vlevo */
+        gap: 10px; /* Střední mezera mezi tlačítky */
+        margin-bottom: 10px; /* Mezera pod tlačítky */
+    }
+
+    .popup-details {
+        display: flex;
+        justify-content: flex-start; /* Zarovnáno vlevo */
+        gap: 40px; /* Větší mezera mezi ikonou a textem */
+        margin-bottom: 1px; /* Mezera pod detaily */
+    }
+
+    .visitor-list {
+        margin-top: 15px;
+        max-height: 100px;
+        overflow-y: auto;
+        border-top: 1px solid #ddd;
+        padding-top: 8px;
+    }
+
+    .visitor-item {
+        margin: 5px 0;
+        padding: 5px 8px;
+        background-color: #f9f9f9;
+        border-radius: 3px;
+        font-size: 14px; /* Stejná velikost písma pro návštěvníky */
+        font-weight: bold; /* Tučný text pro návštěvníky */
+    }
+
+    /* Styl pro adresu (kurzíva) */
+    .leaflet-popup-content .address {
+        font-style: italic; /* Kurzíva pro adresu */
+    }
+
+
+
+
     </style>
     <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.js"></script>
     <script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>
@@ -40,6 +140,13 @@
         map.on('drag', function() {
             map.panInsideBounds(bounds, { animate: true });
         });
+
+        map.on('popupopen', function(e) {
+            var px = map.project(e.popup._latlng); // Získání pozice pop-upu
+            px.y -= e.popup._container.offsetHeight / 2; // Posun pro zobrazení celého pop-upu
+            map.panTo(map.unproject(px), { animate: true }); // Posun mapy
+        });
+
 
         // Načtení mapových podkladů
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -110,19 +217,24 @@
                                                 <div>
                                                     <h4>${pub.name}</h4>
                                                     <p style="font-style: italic;">${pub.address}</p>
-                                                    <p><b>Počet lajků:</b> <span id="like_count_${normalizedName}">${details.like_count}</span></p>
-                                                    <p><b>Počet lidí:</b> <span id="people_count_${normalizedName}">${details.people_count}</span></p>
-                                                    <button id="button_${normalizedName}" class="popup-btn" onclick="togglePub('${pub.name}')">
-                                                        ${data.is_connected ? 'Opustit hospodu' : 'Přidat se'}
-                                                    </button>
-                                                    <button id="like_button_${normalizedName}" class="popup-btn" onclick="toggleLike('${pub.name}')">
-                                                        ${likeData.is_liked ? 'Odebrat like' : 'Lajkni hospodu'}
-                                                    </button>
+                                                    <div class="popup-details">
+                                                        <div><b>Počet lajků:</b> <span id="like_count_${normalizedName}">${details.like_count}</span></div>
+                                                        <div><b>Počet lidí:</b> <span id="people_count_${normalizedName}">${details.people_count}</span></div>
+                                                    </div>
+                                                    <div class="popup-buttons">
+                                                        <button id="like_button_${normalizedName}" class="popup-btn" onclick="toggleLike('${pub.name}')">
+                                                            ${likeData.is_liked ? 'Odebrat like' : 'Lajkni hospodu'}
+                                                        </button>
+                                                        <button id="button_${normalizedName}" class="popup-btn" onclick="togglePub('${pub.name}')">
+                                                            ${data.is_connected ? 'Opustit hospodu' : 'Přidat se'}
+                                                        </button>
+                                                    </div>
                                                     <div class="visitor-list" id="visitor_list_${normalizedName}">
                                                         <b>Návštěvníci:</b>
                                                     </div>
                                                 </div>
                                             `;
+
                                             const popupElement = document.querySelector(`#popup_${normalizedName}`);
                                             if (popupElement) popupElement.innerHTML = popupContent;
 
@@ -159,7 +271,7 @@
                     data.visitors.forEach(visitor => {
                         const visitorItem = document.createElement('div');
                         visitorItem.className = 'visitor-item';
-                        visitorItem.textContent = visitor.username;
+                        visitorItem.textContent = "@" + visitor.username;
                         visitorList.appendChild(visitorItem);
                     });
                 }

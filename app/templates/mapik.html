@@ -15,7 +15,7 @@
         }
         
         .container {
-            width: 110vw;
+            width: 100%;
             max-width: 90%;
             margin: 0 auto;
             text-align: center;
@@ -27,17 +27,15 @@
         }
         
         iframe.map-frame {
-            width: 110%;             /* Přizpůsobení šířky kontejneru */
-            height: 60vh;            /* Dynamická výška */
-            max-width: 800px;        /* Maximální šířka */
-            max-height: 500px;       /* Maximální výška */
+            width: 90%;              /* Šířka mapy */
+            height: 70vh;            /* Výška mapy */
+            max-width: 1000px;       /* Maximální šířka */
             border: none;
         }
 
-        /* Media queries pro ještě lepší responsivitu */
         @media (max-width: 768px) {
             iframe.map-frame {
-                height: 50vh;       /* Nižší výška na menších obrazovkách */
+                height: 60vh;       /* Nižší výška na menších obrazovkách */
             }
         }
     </style>
@@ -47,28 +45,22 @@
     <div class="container">
         <h1>Mapa</h1>
         <p>Najdi své oblíbené hospody</p>
-        <p id="current-pub-info">Načítám aktuální hospodu...</p> <!-- Přidáme element -->
+        <p id="current-pub-info">Načítám aktuální hospodu...</p>
         <iframe src="{{ url_for('static', filename='usti_map.html') }}" class="map-frame"></iframe>
     </div>
     <script>
-        // Dotaz na aktuální hospodu uživatele
         fetch('/get_current_pub')
         .then(response => response.json())
         .then(data => {
             const pubInfoElement = document.getElementById('current-pub-info');
-            if (data.success && data.current_pub) {
-                pubInfoElement.textContent = `Aktuálně navštěvujete: ${data.current_pub}`;
-            } else {
-                pubInfoElement.textContent = "Momentálně nenavštěvujete žádnou hospodu.";
-            }
+            pubInfoElement.innerHTML = data.success && data.current_pub 
+                ? `Aktuálně navštěvujete: <strong>${data.current_pub}</strong>`  /* Tučný text hospody */
+                : "Momentálně nenavštěvujete žádnou hospodu.";
         })
-        .catch(err => {
-            console.error("Error fetching current pub:", err);
-            const pubInfoElement = document.getElementById('current-pub-info');
-            pubInfoElement.textContent = "Chyba při načítání aktuální hospody.";
+        .catch(() => {
+            document.getElementById('current-pub-info').textContent = "Chyba při načítání aktuální hospody.";
         });
     </script>
 </body>
 
 {% endblock %}
-
