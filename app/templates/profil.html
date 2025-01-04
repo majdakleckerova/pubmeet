@@ -89,7 +89,16 @@
                     <ul style="padding-left: 20px;">
                         {% for request in friend_requests %}
                         <li style="margin-bottom: 10px;">
-                            <p><strong>@{{ request }}</strong> vás požádal(a) o přátelství.</p>
+                            <p>
+                                <strong>
+                                    <a href="{{ url_for('auth.user_profile', username=request) }}" 
+                                    style="text-decoration: none; color: #333; transition: color 0.3s ease;" 
+                                    onmouseover="this.style.color='#007BFF'" 
+                                    onmouseout="this.style.color='#333'">
+                                        @{{ request }}
+                                    </a>
+                                </strong> vás požádal(a) o přátelství.
+                            </p>
                             <div class="friend-actions" style="margin-top: 10px;">
                                 <button class="accept-btn" onclick="handleFriendRequest('{{ request }}', 'accept')" style="
                                     background-color: #ccc; color: #333; padding: 6px 12px; border: none; border-radius: 5px; cursor: pointer; font-size: 12px; margin-right: 10px;">
@@ -107,7 +116,8 @@
                     <p>Žádné nové žádosti o přátelství.</p>
                 {% endif %}
             </div>
-        </div>
+
+
 
         <script>
             function handleFriendRequest(username, action) {

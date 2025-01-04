@@ -65,6 +65,7 @@
         });
 
         // Načtení hospod z backendu
+        // Načtení hospod z backendu
         fetch('/get_pubs')
         .then(response => response.json())
         .then(data => {
@@ -96,10 +97,12 @@
                     // Při otevření popupu načti aktuální počet uživatelů
                     marker.on('popupopen', function() {
                         updatePubCount(pub.name);
-                    });
-                    marker.on('popupopen', function() {
                         updatePubVisitors(pub.name);
+                        updateLikeCount(pub.name); // Přidání funkce pro aktualizaci lajků
                     });
+
+                    // Volání pro načtení lajků při inicializaci (pokud je třeba ihned zobrazit počet lajků)
+                    updateLikeCount(pub.name); // Přidání volání funkce pro načtení lajků při načítání hospody
                 }
             });
         });
@@ -128,6 +131,28 @@
             });
         }
 
+        function toggleLike(pubName) {
+            if (!currentUser) {
+                alert("Musíte být přihlášeni, abyste mohli lajknout hospodu.");
+                return;
+            }
+
+            fetch('/toggle_like', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: pubName })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const normalizedName = pubName.replace(/\s/g, '_');
+                    const button = document.querySelector(`#like_button_${normalizedName}`);
+                    button.textContent = data.action === 'liked' ? 'Odebrat like' : 'Lajkni hospodu';
+                    updateLikeCount(pubName); // Aktualizace počtu lajků
+                }
+            });
+        }
+
         // Funkce pro aktualizaci počtu uživatelů
         function updatePubCount(pubName) {
             fetch('/get_pub_count', {
@@ -150,13 +175,8 @@
             .catch(err => console.error("Error fetching pub count:", err));
         }
 
-        function toggleLike(pubName) {
-            if (!currentUser) {
-                alert("Musíte být přihlášeni, abyste mohli lajknout hospodu.");
-                return;
-            }
-
-            fetch('/toggle_like', {
+        function updateLikeCount(pubName) {
+            fetch('/get_like_count', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ name: pubName })
@@ -165,11 +185,19 @@
             .then(data => {
                 if (data.success) {
                     const normalizedName = pubName.replace(/\s/g, '_');
-                    const button = document.querySelector(`#like_button_${normalizedName}`);
-                    button.textContent = data.action === 'liked' ? 'Odebrat like' : 'Lajkni hospodu';
+                    const likeCountElement = document.querySelector(`#like_count_${normalizedName}`);
+                    if (likeCountElement) {
+                        likeCountElement.textContent = data.new_like_count;
+                    }
+                } else {
+                    console.error("Failed to fetch like count:", data.error);
                 }
-            });
+            })
+            .catch(err => console.error("Error fetching like count:", err));
         }
+
+
+
 
         function updatePubVisitors(pubName) {
             fetch('/get_pub_visitors', {
