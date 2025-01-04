@@ -87,13 +87,13 @@
                 <li>
                     <a href="/mapik">Mapa</a>
                 </li>
-                {% if session.get('username') %}
+                {% if current_user.is_authenticated %}
                     <!-- Zobrazit odkazy pro přihlášené uživatele -->
                     <li>
                         <a href="/logout">Odhlásit se</a>
                     </li>
                     <li>
-                        <p style="padding: 12px; font-size: 18px;">Přihlášen jako: {{ session['username'] }}</p>
+                        <p style="padding: 12px; font-size: 18px;">Přihlášen jako: {{ current_user.username }}</p>
                     </li>
                 {% else %}
                     <!-- Zobrazit odkazy pro nepřihlášené uživatele -->
