@@ -6,17 +6,39 @@
 {% block main %}
 <head>
     <style>
+        html, body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden; /* Zakáže scrollování */
+        }
+        
         .container {
-            width: 90vw;           
-            max-width: 100%;      
-            margin: 0 auto;       
-            text-align: center;    
+            width: 110vw;
+            max-width: 90%;
+            margin: 0 auto;
+            text-align: center;
+            position: relative;
+        }
+        
+        h1 {
+            margin-top: -20px; /* Posune nadpis nahoru */
         }
         
         iframe.map-frame {
-            width: 100%;           
-            height: 80vh;        
-            border: none;         
+            width: 110%;             /* Přizpůsobení šířky kontejneru */
+            height: 60vh;            /* Dynamická výška */
+            max-width: 800px;        /* Maximální šířka */
+            max-height: 500px;       /* Maximální výška */
+            border: none;
+        }
+
+        /* Media queries pro ještě lepší responsivitu */
+        @media (max-width: 768px) {
+            iframe.map-frame {
+                height: 50vh;       /* Nižší výška na menších obrazovkách */
+            }
         }
     </style>
 </head>
@@ -28,5 +50,6 @@
         <iframe src="{{ url_for('static', filename='usti_map.html') }}" class="map-frame"></iframe>
     </div>
 </body>
+
 {% endblock %}
 

@@ -28,6 +28,18 @@
 
         var socket = io(); // Připojení na Socket.IO server
         var map = L.map('map').setView([50.6617, 14.0434], 15);
+        // Definujte hranice pro oblast Ústí nad Labem
+        var bounds = L.latLngBounds(
+            [50.61, 13.95], // Jihozápadní roh
+            [50.71, 14.15]  // Severovýchodní roh
+        );
+        // Nastavení maximálních hranic na mapě
+        map.setMaxBounds(bounds);
+        
+        // Zabrání zoomování, které by ukazovalo území mimo hranice
+        map.on('drag', function() {
+            map.panInsideBounds(bounds, { animate: true });
+        });
 
         // Načtení mapových podkladů
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
