@@ -1,6 +1,6 @@
 from flask import Blueprint, request, redirect, render_template, flash, url_for, session, current_app
 from werkzeug.security import generate_password_hash, check_password_hash
-from app.db.neo4j import get_neo4j_session, get_users
+from app.db.neo4j import get_neo4j_session, get_users, get_friends
 from flask_login import login_required, login_user, logout_user, current_user
 from app.models.user import User
 import os
@@ -213,3 +213,40 @@ def mapik():
     return render_template("mapik.html")
 
 
+@auth_bp.route('/uzivatele/<username>', methods=['GET'])
+@login_required
+def user_profile(username):
+    with neo4j_driver.session() as session:
+        # Načti informace o uživatelském profilu
+        query_user = """
+        MATCH (u:User {username: $username})
+        RETURN u.username AS username, u.profile_photo AS profile_photo, 
+               u.bio AS bio, u.birthdate AS birthdate, 
+               u.favourite_drink AS favourite_drink, u.nickname AS nickname
+        """
+        result_user = session.run(query_user, username=username).single()
+
+        if not result_user:
+            flash("Uživatel nenalezen.", "danger")
+            return redirect(url_for('auth.index'))
+
+        # Připrav data pro šablonu
+        user_data = {
+            "username": result_user["username"],
+            "profile_photo": result_user.get("profile_photo"),
+            "bio": result_user.get("bio"),
+            "birthdate": result_user.get("birthdate"),
+            "favourite_drink": result_user.get("favourite_drink"),
+            "nickname": result_user.get("nickname")
+        }
+
+        # Načti přátele (ne žádosti o přátelství)
+        query_friends = """
+        MATCH (u:User)-[:FRIEND]-(f:User)
+        WHERE u.username = $username
+        RETURN f.username AS username
+        """
+        result_friends = session.run(query_friends, username=username)
+        friends = [record["username"] for record in result_friends]
+
+    return render_template('uzivatel_profil.html', user=user_data, friends=friends)

@@ -7,8 +7,8 @@
         <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 30px; border-bottom: 2px solid #bbb; padding-bottom: 30px; margin-left: 20px; max-width: 1000px;">
             <div style="display: flex; align-items: center; width: 100%; margin-bottom: 20px;">
                 <div>
-                    {% if current_user.profile_photo %}
-                        <img src="{{ url_for('static', filename='uploads/' + current_user.profile_photo) }}" 
+                    {% if user.profile_photo %}
+                        <img src="{{ url_for('static', filename='uploads/' + user.profile_photo) }}" 
                              alt="Profilová fotka" 
                              style="width: 200px; height: 200px; border-radius: 50%; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);">
                     {% else %}
@@ -18,27 +18,32 @@
                     {% endif %}
                 </div>
                 <div style="margin-left: 30px; flex-grow: 1;">
-                    <h1 style="margin: 0; font-size: 32px; font-weight: bold; color: #333;">{{ current_user.nickname }}</h1>
-                    <p style="margin: 5px 0; color: gray; font-size: 18px;">@{{ current_user.username }}</p>
+                    <h1 style="margin: 0; font-size: 32px; font-weight: bold; color: #333;">{{ user.nickname }}</h1>
+                    <p style="margin: 5px 0; color: gray; font-size: 18px;">@{{ user.username }}</p>
                 </div>
+                <!-- Tlačítko přidat do přátel -->
+                {% if user.username != current_user.username %}
                 <div style="margin-left: 50px;">
-                    <a href="{{ url_for('auth.edit_profile') }}" class="btn" style="
-                        display: inline-block;
-                        padding: 8px 16px;
+                    <button id="friend-request-{{ user.username }}" onclick="sendFriendRequest('{{ user.username }}')" style="
+                        padding: 6px 12px;
+                        margin-top: 5px;
+                        cursor: pointer;
+                        background-color: #ccc;
+                        border: none;
+                        border-radius: 5px;
                         font-size: 12px;
                         color: #333;
-                        background-color: #ccc;
-                        text-decoration: none;
-                        border-radius: 5px;
-                        transition: background-color 0.3s ease;">
-                        Upravit profil
-                    </a>
+                        text-decoration: none;">
+                        Poslat žádost o přátelství
+                    </button>
                 </div>
+                {% endif %}
             </div>
-           <!-- Bio -->
+
+            <!-- Bio -->
             <div style="font-weight: bold; color: #555; width: 100%; margin-top: 20px;">
                 <p style="margin: 0;">Bio:</p>
-                <p style="font-style: italic; color: #333; margin: 5px 0;">"{{ current_user.bio if current_user.bio else 'Nezadáno' }}"</p>
+                <p style="font-style: italic; color: #333; margin: 5px 0;">"{{ user.bio if user.bio else 'Nezadáno' }}"</p>
             </div>
         </div>
 
@@ -46,21 +51,20 @@
         <div style="margin-top: 20px; margin-left: 20px; max-width: 1000px; display: flex; flex-direction: column; gap: 15px;">
             <div style="background-color: #dcdcdc; padding: 15px; border: 1px solid #bbb; border-radius: 5px;">
                 <p style="font-weight: bold; color: #555; margin: 0;">Datum narození</p>
-                <p style="margin: 5px 0; color: #333;">{{ current_user.birthdate if current_user.birthdate else 'Nezadáno' }}</p>
+                <p style="margin: 5px 0; color: #333;">{{ user.birthdate if user.birthdate else 'Nezadáno' }}</p>
             </div>
             <div style="background-color: #dcdcdc; padding: 15px; border: 1px solid #bbb; border-radius: 5px;">
                 <p style="font-weight: bold; color: #555; margin: 0;">Oblíbený drink</p>
-                <p style="margin: 5px 0; color: #333;">{{ current_user.favourite_drink if current_user.favourite_drink else 'Nezadáno' }}</p>
+                <p style="margin: 5px 0; color: #333;">{{ user.favourite_drink if user.favourite_drink else 'Nezadáno' }}</p>
             </div>
         </div>
 
-        <!-- Spodní část s přáteli a žádostmi -->
+        <!-- Seznam přátel -->
         <div style="display: flex; justify-content: center; gap: 20px; margin-top: 40px; max-width: 1000px;">
-            <!-- Seznam přátel -->
             <div style="flex: 1; max-height: 300px; overflow-y: auto; border: 1px solid #dcdcdc; border-radius: 5px; padding: 15px; background-color: #dcdcdc;">
                 <h3>Seznam přátel</h3>
                 {% if friends %}
-                    <ul style="padding-left: 20px;">
+                    <ul style="padding-left: 20px; margin: 0;">
                         {% for friend in friends %}
                         <li style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
                             <p style="margin: 0; font-weight: bold;">@{{ friend }}</p>
@@ -78,54 +82,35 @@
                         {% endfor %}
                     </ul>
                 {% else %}
-                    <p>Nemáte žádné přátele.</p>
-                {% endif %}
-            </div>
-
-            <!-- Žádosti o přátelství -->
-            <div style="flex: 1; max-height: 300px; overflow-y: auto; border: 1px solid #dcdcdc; border-radius: 5px; padding: 15px; background-color: #dcdcdc;">
-                <h3>Žádosti o přátelství</h3>
-                {% if friend_requests %}
-                    <ul style="padding-left: 20px;">
-                        {% for request in friend_requests %}
-                        <li style="margin-bottom: 10px;">
-                            <p><strong>@{{ request }}</strong> vás požádal(a) o přátelství.</p>
-                            <div class="friend-actions" style="margin-top: 10px;">
-                                <button class="accept-btn" onclick="handleFriendRequest('{{ request }}', 'accept')" style="
-                                    background-color: #ccc; color: #333; padding: 6px 12px; border: none; border-radius: 5px; cursor: pointer; font-size: 12px; margin-right: 10px;">
-                                    Přijmout
-                                </button>
-                                <button class="reject-btn" onclick="handleFriendRequest('{{ request }}', 'reject')" style="
-                                    background-color: #ccc; color: #333; padding: 6px 12px; border: none; border-radius: 5px; cursor: pointer; font-size: 12px;">
-                                    Odmítnout
-                                </button>
-                            </div>
-                        </li>
-                        {% endfor %}
-                    </ul>
-                {% else %}
-                    <p>Žádné nové žádosti o přátelství.</p>
+                    <p>Tento uživatel zatím nemá žádné přátele.</p>
                 {% endif %}
             </div>
         </div>
 
         <script>
-            function handleFriendRequest(username, action) {
-                fetch(`/handle_friend_request`, {
+            function sendFriendRequest(username) {
+                const button = document.getElementById(`friend-request-${username}`);
+                button.disabled = true;
+    
+                fetch('/send_friend_request', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username: username, action: action })
+                    body: JSON.stringify({ username2: username })
                 })
                 .then(response => response.json())
                 .then(data => {
-                    if (data.success) {
-                        alert(data.message);
-                        location.reload();
+                    if (data.error) {
+                        alert(data.error);
+                        button.disabled = false;
                     } else {
-                        alert("Chyba: " + data.error);
+                        button.textContent = "Žádost odeslána";
+                        button.classList.add('friend-request-sent');
                     }
                 })
-                .catch(err => console.error("Chyba při zpracování žádosti:", err));
+                .catch(error => {
+                    console.error("Chyba při odesílání žádosti o přátelství:", error);
+                    button.disabled = false;
+                });
             }
         </script>
     {% else %}

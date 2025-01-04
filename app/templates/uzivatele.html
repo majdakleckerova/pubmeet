@@ -18,6 +18,11 @@
 
         .user-container {
             margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 10px;
         }
 
         .user-info {
@@ -29,17 +34,23 @@
             margin-left: 10px;
         }
 
-        button {
+        .actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        button, .btn {
             padding: 10px;
-            margin-top: 5px;
             cursor: pointer;
             background-color: #ccc;
             border: none;
             border-radius: 5px;
             font-size: 14px;
+            text-align: center;
         }
 
-        button:disabled {
+        button:disabled, .btn:disabled {
             background-color: #e0e0e0;
             cursor: not-allowed;
         }
@@ -48,6 +59,11 @@
             background-color: #4CAF50;
             color: white;
             cursor: not-allowed;
+        }
+
+        .btn {
+            text-decoration: none;
+            display: inline-block;
         }
     </style>
 
@@ -64,8 +80,11 @@
 
                 <p class="user-name"><strong>{{ user.username }}</strong></p>
             </div>
-            <div>
-                <button disabled>Zobrazit profil</button>
+            <div class="actions">
+                <!-- Zobrazit profil -->
+                <a href="{{ url_for('auth.user_profile', username=user.username) }}" class="btn">
+                    Zobrazit profil
+                </a>
                 {% if user.username != current_user.username %}
                 <button id="friend-request-{{ user.username }}" onclick="sendFriendRequest('{{ user.username }}')">
                     Poslat žádost o přátelství
@@ -102,5 +121,4 @@
             });
         }
     </script>
-    {% endblock %}
-    
+{% endblock %}
