@@ -47,8 +47,27 @@
     <div class="container">
         <h1>Mapa</h1>
         <p>Najdi své oblíbené hospody</p>
+        <p id="current-pub-info">Načítám aktuální hospodu...</p> <!-- Přidáme element -->
         <iframe src="{{ url_for('static', filename='usti_map.html') }}" class="map-frame"></iframe>
     </div>
+    <script>
+        // Dotaz na aktuální hospodu uživatele
+        fetch('/get_current_pub')
+        .then(response => response.json())
+        .then(data => {
+            const pubInfoElement = document.getElementById('current-pub-info');
+            if (data.success && data.current_pub) {
+                pubInfoElement.textContent = `Aktuálně navštěvujete: ${data.current_pub}`;
+            } else {
+                pubInfoElement.textContent = "Momentálně nenavštěvujete žádnou hospodu.";
+            }
+        })
+        .catch(err => {
+            console.error("Error fetching current pub:", err);
+            const pubInfoElement = document.getElementById('current-pub-info');
+            pubInfoElement.textContent = "Chyba při načítání aktuální hospody.";
+        });
+    </script>
 </body>
 
 {% endblock %}

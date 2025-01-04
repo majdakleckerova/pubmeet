@@ -21,7 +21,7 @@ def get_neo4j_session():
 def load_pubs_to_neo4j(file_path="hospody.xlsx"):
     try:
         # Načtení dat z Excelu
-        hospody_df = pd.read_excel(file_path).dropna(subset=["Latitude", "Longitude"])
+        hospody_df = pd.read_excel(file_path).dropna(subset=["Latitude", "Longitude", "Adresa"])
     except Exception as e:
         return f"Chyba při načítání Excelu: {e}"
 
@@ -31,9 +31,12 @@ def load_pubs_to_neo4j(file_path="hospody.xlsx"):
                 session.run(
                     """
                     MERGE (p:Pub {name: $name})
-                    SET p.latitude = $latitude, p.longitude = $longitude
+                    SET p.latitude = $latitude, p.longitude = $longitude, p.address = $address
                     """,
-                    name=row["Název"], latitude=row["Latitude"], longitude=row["Longitude"]
+                    name=row["Název"], 
+                    latitude=row["Latitude"], 
+                    longitude=row["Longitude"],
+                    address=row["Adresa"]
                 )
             except Exception as e:
                 print(f"Chyba při zapisování hospody {row['Název']}: {e}")

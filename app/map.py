@@ -11,26 +11,29 @@ from flask_login import current_user
 # Endpoint pro načtení hospod
 @map_bp.route('/get_pubs', methods=['GET'])
 def get_pubs():
+    current_username = current_user.username if current_user.is_authenticated else None
     with get_neo4j_session() as session:
         result = session.run("""
             MATCH (p:Pub)
             OPTIONAL MATCH (p)<-[:IN_PUB]-(u:User)
             OPTIONAL MATCH (p)<-[:LIKES]-(l:User)
+            OPTIONAL MATCH (u:User {username: $username})-[:VISITS]->(p)
             RETURN p.name AS name, p.latitude AS latitude, p.longitude AS longitude, 
-                   COUNT(u) AS users_count, COUNT(l) AS likes_count
-        """)
+                   p.address AS address, COUNT(u) AS users_count, COUNT(l) AS likes_count,
+                   CASE WHEN COUNT(u) > 0 THEN true ELSE false END AS is_connected
+        """, username=current_username)
         pubs = []
         for record in result:
             pubs.append({
                 "name": record["name"],
                 "latitude": record["latitude"],
                 "longitude": record["longitude"],
+                "address": record["address"],
                 "people_count": record["users_count"],
-                "likes_count": record["likes_count"]
+                "likes_count": record["likes_count"],
+                "is_connected": record["is_connected"]  # Přidáme informaci o připojení
             })
         return jsonify(pubs)
-
-
 # Endpoint pro přepočítání počtu lidí v hospodě
 @map_bp.route('/get_pub_count', methods=['POST'])
 def get_pub_count():
@@ -206,7 +209,104 @@ def get_pub_visitors():
     except Exception as e:
         print(f"Error in get_pub_visitors: {e}")
         return jsonify(success=False, error="An error occurred"), 500
+@map_bp.route('/get_like_count', methods=['POST'])
+def get_like_count():
+    if not current_user.is_authenticated:
+        return jsonify(success=False, error="User not authenticated"), 401
 
+    data = request.json
+    pub_name = data.get('name')
 
+    try:
+        with get_neo4j_session() as session:
+            result = session.run("""
+                MATCH (p:Pub {name: $pub_name})
+                OPTIONAL MATCH (p)<-[:LIKES]-(u:User)
+                RETURN COUNT(u) AS like_count
+            """, pub_name=pub_name)
+            like_count = result.single()["like_count"]
+            return jsonify(success=True, like_count=like_count)
+    except Exception as e:
+        print(f"Error in get_like_count: {e}")
+        return jsonify(success=False, error="An error occurred"), 500
 
+@map_bp.route('/is_user_in_pub', methods=['POST'])
+def is_user_in_pub():
+    if not current_user.is_authenticated:
+        return jsonify(success=False, error="User not authenticated"), 401
 
+    data = request.json
+    pub_name = data.get('name')
+
+    try:
+        with get_neo4j_session() as session:
+            result = session.run("""
+                MATCH (u:User {username: $username})-[r:VISITS]->(p:Pub {name: $pub_name})
+                RETURN COUNT(r) > 0 AS is_connected
+            """, username=current_user.username, pub_name=pub_name)
+            is_connected = result.single()["is_connected"]
+            return jsonify(success=True, is_connected=is_connected)
+    except Exception as e:
+        print(f"Error in is_user_in_pub: {e}")
+        return jsonify(success=False, error="An error occurred"), 500
+
+@map_bp.route('/get_pub_details', methods=['POST'])
+def get_pub_details():
+    if not current_user.is_authenticated:
+        return jsonify(success=False, error="User not authenticated"), 401
+
+    data = request.json
+    pub_name = data.get('name')
+
+    try:
+        with get_neo4j_session() as session:
+            result = session.run("""
+                MATCH (p:Pub {name: $pub_name})
+                OPTIONAL MATCH (p)<-[:VISITS]-(u:User)
+                OPTIONAL MATCH (p)<-[:LIKES]-(l:User)
+                RETURN COUNT(u) AS people_count, COUNT(l) AS like_count
+            """, pub_name=pub_name)
+            record = result.single()
+            return jsonify(success=True, 
+                           people_count=record["people_count"], 
+                           like_count=record["like_count"])
+    except Exception as e:
+        print(f"Error in get_pub_details: {e}")
+        return jsonify(success=False, error="An error occurred"), 500
+@map_bp.route('/is_pub_liked', methods=['POST'])
+def is_pub_liked():
+    if not current_user.is_authenticated:
+        return jsonify(success=False, error="User not authenticated"), 401
+
+    data = request.json
+    pub_name = data.get('name')
+
+    try:
+        with get_neo4j_session() as session:
+            result = session.run("""
+                MATCH (u:User {username: $username})-[r:LIKES]->(p:Pub {name: $pub_name})
+                RETURN COUNT(r) > 0 AS is_liked
+            """, username=current_user.username, pub_name=pub_name)
+            is_liked = result.single()["is_liked"]
+            return jsonify(success=True, is_liked=is_liked)
+    except Exception as e:
+        print(f"Error in is_pub_liked: {e}")
+        return jsonify(success=False, error="An error occurred"), 500
+@map_bp.route('/get_current_pub', methods=['GET'])
+def get_current_pub():
+    if not current_user.is_authenticated:
+        return jsonify(success=False, message="User not authenticated"), 401
+
+    try:
+        with get_neo4j_session() as session:
+            result = session.run("""
+                MATCH (u:User {username: $username})-[r:VISITS]->(p:Pub)
+                RETURN p.name AS current_pub
+            """, username=current_user.username)
+            record = result.single()
+            current_pub = record["current_pub"] if record else None
+
+        return jsonify(success=True, current_pub=current_pub)
+    except Exception as e:
+        print(f"Error in get_current_pub: {e}")
+        return jsonify(success=False, error="An error occurred"), 500
