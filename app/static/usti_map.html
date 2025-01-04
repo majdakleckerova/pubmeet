@@ -53,6 +53,7 @@
         });
 
         // Načtení hospod z backendu
+        // Načtení hospod z backendu
         fetch('/get_pubs')
         .then(response => response.json())
         .then(data => {
@@ -84,10 +85,12 @@
                     // Při otevření popupu načti aktuální počet uživatelů
                     marker.on('popupopen', function() {
                         updatePubCount(pub.name);
-                    });
-                    marker.on('popupopen', function() {
                         updatePubVisitors(pub.name);
+                        updateLikeCount(pub.name); // Přidání funkce pro aktualizaci lajků
                     });
+
+                    // Volání pro načtení lajků při inicializaci (pokud je třeba ihned zobrazit počet lajků)
+                    updateLikeCount(pub.name); // Přidání volání funkce pro načtení lajků při načítání hospody
                 }
             });
         });
@@ -180,6 +183,7 @@
             })
             .catch(err => console.error("Error fetching like count:", err));
         }
+
 
 
 
