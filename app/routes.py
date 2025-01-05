@@ -1,6 +1,6 @@
 from flask import Blueprint, request, redirect, render_template, flash, url_for, session, current_app
 from werkzeug.security import generate_password_hash, check_password_hash
-from app.db.neo4j import get_neo4j_session, get_users, get_friends
+from app.db.neo4j import get_neo4j_session, get_users, get_friends, get_friendship_status
 from flask_login import login_required, login_user, logout_user, current_user
 from app.models.user import User
 import os
@@ -159,7 +159,16 @@ def login():
 @login_required
 def index():
     users = get_users()
-    return render_template("uzivatele.html", users=users)
+    
+    # Přidání stavu přátelství mezi current_user a každým uživatelem v seznamu
+    users_with_status = []
+    for user in users:
+        status = get_friendship_status(current_user.username, user['username'])
+        user['friendship_status'] = status
+        users_with_status.append(user)
+    
+    return render_template("uzivatele.html", users=users_with_status)
+
 
 
 
@@ -256,6 +265,10 @@ def user_profile(username):
             "nickname": result_user.get("nickname")
         }
 
+        # Přidej stav přátelství mezi current_user a uživatelem
+        friendship_status = get_friendship_status(current_user.username, username)
+        user_data["friendship_status"] = friendship_status
+
         # Načti přátele (ne žádosti o přátelství)
         query_friends = """
         MATCH (u:User)-[:FRIEND]-(f:User)
@@ -282,4 +295,11 @@ def user_profile(username):
         result_location = session.run(query_location, username=username)
         location = [record["pub_name"] for record in result_location] if is_friend else ["Přístupné pouze pro přátele."]
 
-    return render_template('uzivatel_profil.html', user=user_data, friends=friends, liked_pubs=liked_pubs, location=location, is_friend=is_friend)
+    return render_template(
+        'uzivatel_profil.html', 
+        user=user_data, 
+        friends=friends, 
+        liked_pubs=liked_pubs, 
+        location=location, 
+        is_friend=is_friend
+    )

@@ -15,7 +15,7 @@
  
 - **uživatelé**:
     - ~~zprovoznit zobrazit profil (vytvořit templates automaticky každému novému uživateli s polem s profilem + přátelé + fav hospody + přidat do přátel + aktuální lokace, když přátelé)~~
-    - ?majda: logika kolem žádostí (poslat žádost/přijmout žádost/žádost odeslána/přátelé)
+    - ~~?majda: logika kolem žádostí (poslat žádost/přijmout žádost/žádost odeslána/přátelé)~~
 
 - **mapa**:
     - ~~david: hezčí markery (kulatý s fotkou hospody?)~~

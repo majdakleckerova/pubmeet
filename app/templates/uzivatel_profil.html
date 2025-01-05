@@ -1,6 +1,65 @@
 {% extends "sablona.html" %}
 
 {% block main %}
+<style>
+    /* Základní styl pro tlačítka */
+    button, .btn {
+        padding: 8px 16px;  /* Menší padding pro tlačítka */
+        font-size: 14px; /* Menší font */
+        cursor: pointer;
+        border: none;  /* Odebrání ohraničení */
+        border-radius: 5px;
+        text-align: center;
+        transition: background-color 0.3s ease, transform 0.2s ease;
+        width: 180px; /* Menší šířka tlačítek */
+        font-weight: bold;
+    }
+
+    /* Barvy tlačítek ladící k sidebaru */
+    .add-friend, .view-profile, .send-request {
+        background-color: #e0e0e0; /* Světle šedé pozadí */
+        color: #333;
+    }
+
+    .view-profile {
+        background-color: #e0e0e0;
+        color: #333;
+    }
+
+    .send-request {
+        background-color: #e0e0e0;
+        color: #333;
+    }
+
+    /* Tlačítko "Přijmout žádost" tmavší šedá */
+    .accept-request {
+        background-color: #a9a9a9; /* Tmavší šedá pro "Přijmout žádost" */
+        color: #333;
+    }
+
+    /* Efekt při najetí myší */
+    button:hover, .btn:hover {
+        background-color: #d3d3d3; /* Světlejší šedá při hover */
+        transform: scale(1.05); /* Mírné zvětšení tlačítka při najetí */
+    }
+
+    /* Efekt při najetí na Přijmout žádost */
+    .accept-request:hover {
+        background-color: #808080; /* Ještě tmavší šedá při hover */
+    }
+
+    /* Efekt při kliknutí */
+    button:active, .btn:active {
+        transform: scale(0.95); /* Mírné zmenšení tlačítka při kliknutí */
+    }
+
+    /* Disabled tlačítka */
+    button:disabled, .btn:disabled {
+        background-color: #d3d3d3; /* Světle šedé pro disabled */
+        cursor: not-allowed;
+    }
+</style>
+
 <body>
     {% if current_user.is_authenticated %}
         <!-- Horní část profilu -->
@@ -24,18 +83,23 @@
                 <!-- Tlačítko přidat do přátel -->
                 {% if user.username != current_user.username %}
                 <div style="margin-left: 50px;">
-                    <button id="friend-request-{{ user.username }}" onclick="sendFriendRequest('{{ user.username }}')" style="
-                        padding: 6px 12px;
-                        margin-top: 5px;
-                        cursor: pointer;
-                        background-color: #ccc;
-                        border: none;
-                        border-radius: 5px;
-                        font-size: 12px;
-                        color: #333;
-                        text-decoration: none;">
-                        Poslat žádost o přátelství
-                    </button>
+                    {% if user.friendship_status == 'no_relationship' %}
+                        <button id="friend-request-{{ user.username }}" class="send-request" onclick="sendFriendRequest('{{ user.username }}')">
+                            Poslat žádost o přátelství
+                        </button>
+                    {% elif user.friendship_status == 'sent_request' %}
+                        <button id="friend-request-{{ user.username }}" disabled class="send-request">
+                            Žádost odeslána
+                        </button>
+                    {% elif user.friendship_status == 'received_request' %}
+                        <button id="friend-request-{{ user.username }}" class="accept-request" onclick="acceptFriendRequest('{{ user.username }}')">
+                            Přijmout žádost o přátelství
+                        </button>
+                    {% elif user.friendship_status == 'friends' %}
+                        <button id="friend-request-{{ user.username }}" disabled class="send-request">
+                            Přátelé
+                        </button>
+                    {% endif %}
                 </div>
                 {% endif %}
             </div>
@@ -145,6 +209,31 @@
                 })
                 .catch(error => {
                     console.error("Chyba při odesílání žádosti o přátelství:", error);
+                    button.disabled = false;
+                });
+            }
+
+            function acceptFriendRequest(username) {
+                const button = document.getElementById(`friend-request-${username}`);
+                button.disabled = true;
+
+                fetch('/accept_friend_request', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username1: username })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        alert(data.error);
+                        button.disabled = false;
+                    } else {
+                        button.textContent = "Přátelé";
+                        button.classList.add('friend-request-sent');
+                    }
+                })
+                .catch(error => {
+                    console.error("Chyba při přijímání žádosti o přátelství:", error);
                     button.disabled = false;
                 });
             }

@@ -1,6 +1,54 @@
 {% extends "sablona.html" %}
 
 {% block main %}
+<style>
+    /* Základní styl pro tlačítka */
+    button, .btn {
+        padding: 8px 16px;  /* Menší padding pro tlačítka */
+        font-size: 14px; /* Menší font */
+        cursor: pointer;
+        border: none;  /* Odebrání ohraničení */
+        border-radius: 5px;
+        text-align: center;
+        transition: background-color 0.3s ease, transform 0.2s ease;
+        width: 180px; /* Menší šířka tlačítek */
+        font-weight: bold;
+    }
+
+    /* Barvy tlačítek ladící k sidebaru */
+    button, .btn, .add-friend, .view-profile, .send-request {
+        background-color: #e0e0e0; /* Světle šedé pozadí */
+        color: #333;
+    }
+
+    /* Tlačítko "Přijmout žádost" tmavší šedá */
+    .accept-request {
+        background-color: #a9a9a9; /* Tmavší šedá pro "Přijmout žádost" */
+        color: #333;
+    }
+
+    /* Efekt při najetí myší */
+    button:hover, .btn:hover, .add-friend:hover, .view-profile:hover, .send-request:hover {
+        background-color: #d3d3d3; /* Světlejší šedá při hover */
+        transform: scale(1.05); /* Mírné zvětšení tlačítka při najetí */
+    }
+
+    /* Efekt při najetí na Přijmout žádost */
+    .accept-request:hover {
+        background-color: #808080; /* Ještě tmavší šedá při hover */
+    }
+
+    /* Efekt při kliknutí */
+    button:active, .btn:active, .add-friend:active, .view-profile:active, .send-request:active {
+        transform: scale(0.95); /* Mírné zmenšení tlačítka při kliknutí */
+    }
+
+    /* Disabled tlačítka */
+    button:disabled, .btn:disabled {
+        background-color: #d3d3d3; /* Světle šedé pro disabled */
+        cursor: not-allowed;
+    }
+</style>
 <body>
     {% if current_user.is_authenticated %}
         <!-- Horní část profilu -->
@@ -22,17 +70,7 @@
                     <p style="margin: 5px 0; color: gray; font-size: 18px;">@{{ current_user.username }}</p>
                 </div>
                 <div style="margin-left: 50px;">
-                    <a href="{{ url_for('auth.edit_profile') }}" class="btn" style="
-                        display: inline-block;
-                        padding: 8px 16px;
-                        font-size: 12px;
-                        color: #333;
-                        background-color: #ccc;
-                        text-decoration: none;
-                        border-radius: 5px;
-                        transition: background-color 0.3s ease;">
-                        Upravit profil
-                    </a>
+                    <a href="{{ url_for('auth.edit_profile') }}" class="btn">Upravit profil</a>
                 </div>
             </div>
            <!-- Bio -->
@@ -112,20 +150,32 @@
                                 <strong>
                                     <a href="{{ url_for('auth.user_profile', username=request) }}" 
                                     style="text-decoration: none; color: #333; transition: color 0.3s ease;" 
-                                    onmouseover="this.style.color='#007BFF'" 
+                                    onmouseover="this.style.color='#8b5a5a'" 
                                     onmouseout="this.style.color='#333'">
                                         @{{ request }}
                                     </a>
                                 </strong> vás požádal(a) o přátelství.
                             </p>
                             <div class="friend-actions" style="margin-top: 10px;">
-                                <button class="accept-btn" onclick="handleFriendRequest('{{ request }}', 'accept')" style="
-                                    background-color: #ccc; color: #333; padding: 6px 12px; border: none; border-radius: 5px; cursor: pointer; font-size: 12px; margin-right: 10px;">
+                                <button class="btn" style="
+                                padding: 6px 12px;
+                                background-color: #ccc;
+                                color: #333;
+                                font-size: 12px;
+                                text-decoration: none;
+                                border-radius: 5px;
+                                cursor: pointer;" onclick="handleFriendRequest('{{ request }}', 'accept')">
                                     Přijmout
                                 </button>
-                                <button class="reject-btn" onclick="handleFriendRequest('{{ request }}', 'reject')" style="
-                                    background-color: #ccc; color: #333; padding: 6px 12px; border: none; border-radius: 5px; cursor: pointer; font-size: 12px;">
-                                    Odmítnout
+                                <button class="btn" style="
+                                padding: 6px 12px;
+                                background-color: #ccc;
+                                color: #333;
+                                font-size: 12px;
+                                text-decoration: none;
+                                border-radius: 5px;
+                                cursor: pointer;" onclick="handleFriendRequest('{{ request }}', 'reject')">
+                                    Skrýt
                                 </button>
                             </div>
                         </li>

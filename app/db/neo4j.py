@@ -146,6 +146,14 @@ def accept_friend_request():
         RETURN u1, u2, r
         """
         result = session.run(query, username1=username1, username2=username2)
+
+        query_delete_request = """
+        MATCH (u1:User {username: $username1})-[r:FRIEND_REQUEST {status: 'REQUESTED'}]->(u2:User {username: $username2})
+        DELETE r
+        """
+        session.run(query_delete_request, username1=username1, username2=username2)
+
+
         if result.peek() is None:
             return jsonify({"error": "Chyba při potvrzování přátelství."}), 500
         return jsonify({"message": f"Přátelství mezi {username1} a {username2} bylo potvrzeno."}), 200
@@ -207,3 +215,32 @@ def handle_friend_request():
 
     return jsonify({"success": True, "message": f"Akce {action} byla úspěšně provedena."})
 
+def get_friendship_status(current_user, target_user):
+    with neo4j_driver.session() as session:
+        query = """
+        MATCH (u1:User {username: $current_user}), (u2:User {username: $target_user})
+        OPTIONAL MATCH (u1)-[r1:FRIEND_REQUEST]->(u2)
+        OPTIONAL MATCH (u2)-[r2:FRIEND_REQUEST]->(u1)
+        OPTIONAL MATCH (u1)-[r3:FRIEND]->(u2)
+        OPTIONAL MATCH (u2)-[r4:FRIEND]->(u1)
+        OPTIONAL MATCH (u1)-[r5:FRIEND_REQUEST {status: 'CONFIRMED'}]->(u2)
+        OPTIONAL MATCH (u2)-[r6:FRIEND_REQUEST {status: 'CONFIRMED'}]->(u1)
+        RETURN
+            COUNT(r1) > 0 AS sent_request,
+            COUNT(r2) > 0 AS received_request,
+            COUNT(r3) > 0 AS are_friends,
+            COUNT(r5) > 0 OR COUNT(r6) > 0 AS are_friends_confirmed
+        """
+        result = session.run(query, current_user=current_user, target_user=target_user)
+        data = result.single()
+        
+        if data:
+            if data['are_friends'] or data['are_friends_confirmed']:
+                return 'friends'  # Jsou přátelé (i když byla žádost potvrzena)
+            elif data['sent_request']:
+                return 'sent_request'  # Žádost odeslána
+            elif data['received_request']:
+                return 'received_request'  # Žádost přijmout
+            else:
+                return 'no_relationship'  # Žádný vztah
+        return 'no_relationship'  # Žádný vztah
