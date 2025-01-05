@@ -185,76 +185,125 @@
                         .addTo(map)
                         .bindPopup(`<div id="popup_${normalizedName}">Načítám...</div>`);
         
-                    marker.on('popupopen', function() {
-                    // Dotaz na server, zda je uživatel připojen k této hospodě a získání detailů hospody
-                    fetch('/is_user_in_pub', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ name: pub.name })
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            // Získání people_count a like_count
-                            fetch('/get_pub_details', {
+                        marker.on('popupopen', function () {
+                            const pubName = pub.name;
+                            const normalizedName = pubName.replace(/\s/g, '_');
+                        
+                            // Vložení základního HTML pro popup
+                            const popupElement = document.querySelector(`#popup_${normalizedName}`);
+                            if (popupElement) {
+                                popupElement.innerHTML = `
+                                    <div>
+                                        <h4>${pub.name}</h4>
+                                        <p style="font-style: italic;">${pub.address}</p>
+                                        <div class="popup-details">
+                                            <div><b>Počet lajků:</b> <span id="like_count_${normalizedName}">Načítám...</span></div>
+                                            <div><b>Počet lidí:</b> <span id="people_count_${normalizedName}">Načítám...</span></div>
+                                        </div>
+                                        <div class="popup-buttons">
+                                            <button id="like_button_${normalizedName}" class="popup-btn" onclick="toggleLike('${pub.name}')">Načítám...</button>
+                                            <button id="button_${normalizedName}" class="popup-btn" onclick="togglePub('${pub.name}')">Načítám...</button>
+                                        </div>
+                                        <div class="visitor-list" id="visitor_list_${normalizedName}">
+                                            <b>Návštěvníci:</b>
+                                        </div>
+                                    </div>
+                                `;
+                            }
+                                // Načtení počtu lidí (people_count)
+                            fetch('/get_people_count', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ name: pub.name })
+                                body: JSON.stringify({ name: pubName })
                             })
                             .then(response => response.json())
-                            .then(details => {
-                                if (details.success) {
-                                    // Získání informace, zda uživatel lajknul hospodu
-                                    fetch('/is_pub_liked', {
-                                        method: 'POST',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({ name: pub.name })
-                                    })
-                                    .then(response => response.json())
-                                    .then(likeData => {
-                                        if (likeData.success) {
-                                            const popupContent = `
-                                                <div>
-                                                    <h4>${pub.name}</h4>
-                                                    <p style="font-style: italic;">${pub.address}</p>
-                                                    <div class="popup-details">
-                                                        <div><b>Počet lajků:</b> <span id="like_count_${normalizedName}">${details.like_count}</span></div>
-                                                        <div><b>Počet lidí:</b> <span id="people_count_${normalizedName}">${details.people_count}</span></div>
-                                                    </div>
-                                                    <div class="popup-buttons">
-                                                        <button id="like_button_${normalizedName}" class="popup-btn" onclick="toggleLike('${pub.name}')">
-                                                            ${likeData.is_liked ? 'Odebrat like' : 'Lajkni hospodu'}
-                                                        </button>
-                                                        <button id="button_${normalizedName}" class="popup-btn" onclick="togglePub('${pub.name}')">
-                                                            ${data.is_connected ? 'Opustit hospodu' : 'Přidat se'}
-                                                        </button>
-                                                    </div>
-                                                    <div class="visitor-list" id="visitor_list_${normalizedName}">
-                                                        <b>Návštěvníci:</b>
-                                                    </div>
-                                                </div>
-                                            `;
-
-                                            const popupElement = document.querySelector(`#popup_${normalizedName}`);
-                                            if (popupElement) popupElement.innerHTML = popupContent;
-
-                                            // Aktualizace seznamu návštěvníků
-                                            updatePubVisitors(pub.name);
-                                        }
-                                    })
-                                    .catch(err => console.error("Error checking if pub is liked:", err));
+                            .then(data => {
+                                if (data.success) {
+                                    const peopleCountElement = document.querySelector(`#people_count_${normalizedName}`);
+                                    if (peopleCountElement) {
+                                        peopleCountElement.textContent = data.people_count;
+                                    }
                                 }
                             })
-                            .catch(err => console.error("Error fetching pub details:", err));
+                            .catch(err => console.error("Error fetching people count:", err));
+                        
+                            // Načtení počtu lajků (like_count)
+                            fetch('/get_like_count', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ name: pubName })
+                            })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success) {
+                                    const likeCountElement = document.querySelector(`#like_count_${normalizedName}`);
+                                    if (likeCountElement) {
+                                        likeCountElement.textContent = data.like_count;
+                                    }
+                                }
+                            })
+                            .catch(err => console.error("Error fetching like count:", err));
+                        
+                            // Načtení stavu uživatele (je v hospodě)
+                            fetch('/is_user_in_pub', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ name: pubName })
+                            })
+                            .then(response => response.json())
+                            .then(data => {
+                                const buttonElement = document.querySelector(`#button_${normalizedName}`);
+                                if (data.success && buttonElement) {
+                                    buttonElement.textContent = data.is_connected ? 'Opustit hospodu' : 'Přidat se';
+                                }
+                            })
+                            .catch(err => console.error("Error checking user connection:", err));
+                        
+                            // Načtení stavu lajků (uživatel dal like)
+                            fetch('/is_pub_liked', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ name: pubName })
+                            })
+                            .then(response => response.json())
+                            .then(data => {
+                                const likeButtonElement = document.querySelector(`#like_button_${normalizedName}`);
+                                if (data.success && likeButtonElement) {
+                                    likeButtonElement.textContent = data.is_liked ? 'Odebrat like' : 'Lajkni hospodu';
+                                }
+                            })
+                            .catch(err => console.error("Error checking pub like:", err));
+                        });
+                        
+                        // Funkce pro aktualizaci návštěvníků hospody
+                        function updatePubVisitors(pubName) {
+                            fetch('/get_pub_visitors', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ name: pubName })
+                            })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success) {
+                                    const normalizedName = pubName.replace(/\s/g, '_');
+                                    const visitorList = document.querySelector(`#visitor_list_${normalizedName}`);
+                                    if (visitorList) {
+                                        visitorList.innerHTML = '<b>Návštěvníci:</b>';
+                                        data.visitors.forEach(visitor => {
+                                            const visitorItem = document.createElement('div');
+                                            visitorItem.className = 'visitor-item';
+                                            visitorItem.textContent = `@${visitor.username}`;
+                                            visitorList.appendChild(visitorItem);
+                                        });
+                                    }
+                                }
+                            })
+                            .catch(err => console.error("Error fetching visitors:", err));
                         }
-                    })
-                    .catch(err => console.error("Error checking if user is in pub:", err));
-                });
-                
-                }
-            });
-        });
-
+                    }
+                })
+        });   
+                        
         // Funkce pro aktualizaci návštěvníků hospody
         function updatePubVisitors(pubName) {
             fetch('/get_pub_visitors', {

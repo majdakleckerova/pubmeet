@@ -34,26 +34,6 @@ def get_pubs():
                 "is_connected": record["is_connected"]  # Přidáme informaci o připojení
             })
         return jsonify(pubs)
-# Endpoint pro přepočítání počtu lidí v hospodě
-@map_bp.route('/get_pub_count', methods=['POST'])
-def get_pub_count():
-    try:
-        data = request.json
-        pub_name = data['name']
-        
-        with neo4j_driver.session() as session:
-            result = session.run("""
-                MATCH (p:Pub {name: $pub_name})
-                OPTIONAL MATCH (p)<-[:VISITS]-(u:User)
-                RETURN COUNT(u) AS user_count
-            """, pub_name=pub_name)
-            count = result.single()["user_count"]
-
-        return jsonify(success=True, pub_name=pub_name, user_count=count)
-    except Exception as e:
-        print(f"Error in get_pub_count: {e}")
-        return jsonify(success=False, error="An error occurred"), 500
-
 # Endpoint pro připojení/odpojení od hospody
 @map_bp.route('/toggle_pub', methods=['POST'])
 def toggle_pub():
@@ -231,7 +211,6 @@ def get_like_count():
     except Exception as e:
         print(f"Error in get_like_count: {e}")
         return jsonify(success=False, error="An error occurred"), 500
-
 @map_bp.route('/is_user_in_pub', methods=['POST'])
 def is_user_in_pub():
     if not current_user.is_authenticated:
@@ -262,16 +241,22 @@ def get_pub_details():
 
     try:
         with get_neo4j_session() as session:
+            # Počítání spojení VISITS a LIKES
             result = session.run("""
                 MATCH (p:Pub {name: $pub_name})
                 OPTIONAL MATCH (p)<-[:VISITS]-(u:User)
                 OPTIONAL MATCH (p)<-[:LIKES]-(l:User)
                 RETURN COUNT(u) AS people_count, COUNT(l) AS like_count
             """, pub_name=pub_name)
+            
             record = result.single()
-            return jsonify(success=True, 
-                           people_count=record["people_count"], 
-                           like_count=record["like_count"])
+
+            # Vrácení výsledků
+            return jsonify(
+                success=True, 
+                people_count=record["people_count"], 
+                like_count=record["like_count"]
+            )
     except Exception as e:
         print(f"Error in get_pub_details: {e}")
         return jsonify(success=False, error="An error occurred"), 500
@@ -311,4 +296,24 @@ def get_current_pub():
         return jsonify(success=True, current_pub=current_pub)
     except Exception as e:
         print(f"Error in get_current_pub: {e}")
+        return jsonify(success=False, error="An error occurred"), 500
+@map_bp.route('/get_people_count', methods=['POST'])
+def get_people_count():
+    if not current_user.is_authenticated:
+        return jsonify(success=False, error="User not authenticated"), 401
+
+    data = request.json
+    pub_name = data.get('name')
+
+    try:
+        with get_neo4j_session() as session:
+            result = session.run("""
+                MATCH (p:Pub {name: $pub_name})
+                OPTIONAL MATCH (p)<-[:VISITS]-(u:User)
+                RETURN COUNT(u) AS people_count
+            """, pub_name=pub_name)
+            people_count = result.single()["people_count"]
+            return jsonify(success=True, people_count=people_count)
+    except Exception as e:
+        print(f"Error in get_people_count: {e}")
         return jsonify(success=False, error="An error occurred"), 500
