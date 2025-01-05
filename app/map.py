@@ -1,5 +1,4 @@
 from flask import Blueprint, jsonify, request
-from app.db.redis import redis_client
 from flask_login import current_user
 from app.extensions import socketio
 from app.db.neo4j import neo4j_driver
