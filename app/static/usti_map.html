@@ -157,7 +157,6 @@
             return window.btoa(unescape(encodeURIComponent(str)));
         }
 
-        // SVG pro růžový marker
         const beerIconSvg = `
         <svg xmlns="http://www.w3.org/2000/svg" width="30" height="40" viewBox="0 0 30 40">
           <!-- Půllitr -->
@@ -210,6 +209,7 @@
                                     </div>
                                 `;
                             }
+                            updatePubVisitors(pubName)
                                 // Načtení počtu lidí (people_count)
                             fetch('/get_people_count', {
                                 method: 'POST',
