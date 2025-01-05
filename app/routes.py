@@ -204,7 +204,15 @@ def profile():
         result_likes = session.run(query_likes, username=current_user.username)
         liked_pubs = [record["pub_name"] for record in result_likes]
 
-    return render_template('profil.html', friend_requests=friend_requests, friends=friends, liked_pubs=liked_pubs)
+        query_location = """
+        MATCH (u:User)-[:VISITS]->(p:Pub)
+        WHERE u.username = $username
+        RETURN p.name AS pub_name
+        """
+        result_location = session.run(query_location, username = current_user.username)
+        location = [record["pub_name"] for record in result_location]
+
+    return render_template('profil.html', friend_requests=friend_requests, friends=friends, liked_pubs=liked_pubs, location=location)
 
 
 
@@ -265,4 +273,13 @@ def user_profile(username):
         result_likes = session.run(query_likes, username=username)
         liked_pubs = [record["pub_name"] for record in result_likes]
 
-    return render_template('uzivatel_profil.html', user=user_data, friends=friends, liked_pubs=liked_pubs)
+        is_friend = current_user.username in friends
+        query_location = """
+        MATCH (u:User)-[:VISITS]->(p:Pub)
+        WHERE u.username = $username
+        RETURN p.name AS pub_name
+        """
+        result_location = session.run(query_location, username=username)
+        location = [record["pub_name"] for record in result_location] if is_friend else ["Přístupné pouze pro přátele."]
+
+    return render_template('uzivatel_profil.html', user=user_data, friends=friends, liked_pubs=liked_pubs, location=location, is_friend=is_friend)

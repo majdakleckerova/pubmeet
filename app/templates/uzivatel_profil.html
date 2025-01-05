@@ -47,6 +47,25 @@
             </div>
         </div>
 
+        <div style="margin-top: 20px; margin-left: 20px; max-width: 1000px; display: flex; flex-direction: column; gap: 15px;">
+            <div style="background-color: #dcdcdc; padding: 15px; border: 1px solid #bbb; border-radius: 5px; display: flex; align-items: center; justify-content: space-between;">
+                <p style="font-weight: bold; color: #555; margin: 0; display: flex; align-items: center;">
+                    📍 <span style="margin-left: 5px;">Aktuálně navštěvovaná hospoda</span>
+                </p>
+                <div style="margin-left: 15px; flex-grow: 1; text-align: right;">
+                    {% if location %}
+                        <div style="font-weight: bold; color: #333; border-bottom: 2px solid #ccc; padding: 8px 0; margin-bottom: 8px;">
+                            {% for pub in location %}
+                                {{ pub }} <br>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p>Nenavštěvuje žádnou hospodu.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
         <!-- Sekce s informacemi -->
         <div style="margin-top: 20px; margin-left: 20px; max-width: 1000px; display: flex; flex-direction: column; gap: 15px;">
             <div style="background-color: #dcdcdc; padding: 15px; border: 1px solid #bbb; border-radius: 5px;">
@@ -99,7 +118,7 @@
                         {% endfor %}
                     </div>
                 {% else %}
-                    <p>Zatím nemáte žádné oblíbené hospody.</p>
+                    <p>Tento uživatel zatím nemá žádné oblíbené hospody.</p>
                 {% endif %}
             </div>
         </div>
