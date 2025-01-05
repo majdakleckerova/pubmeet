@@ -85,6 +85,23 @@
                     <p>Tento uživatel zatím nemá žádné přátele.</p>
                 {% endif %}
             </div>
+
+
+            <!-- Lajkované hospody -->
+            <div style="flex: 1; max-height: 300px; overflow-y: auto; border: 1px solid #dcdcdc; border-radius: 5px; padding: 15px; background-color: #dcdcdc;">
+                <h3>Oblíbené hospody</h3>
+                {% if liked_pubs %}
+                    <div style="padding-left: 20px;">
+                        {% for pub in liked_pubs %}
+                        <div style="font-weight: bold; color: #333; border-bottom: 2px solid #ccc; padding: 8px 0; margin-bottom: 8px;">
+                            {{ pub }}
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p>Zatím nemáte žádné oblíbené hospody.</p>
+                {% endif %}
+            </div>
         </div>
 
         <script>

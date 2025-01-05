@@ -196,7 +196,15 @@ def profile():
         result_friends = session.run(query_friends, username=current_user.username)
         friends = [record["username"] for record in result_friends]
 
-    return render_template('profil.html', friend_requests=friend_requests, friends=friends)
+        query_likes = """
+        MATCH (u:User)-[:LIKES]->(p:Pub)
+        WHERE u.username = $username
+        RETURN p.name AS pub_name
+        """
+        result_likes = session.run(query_likes, username=current_user.username)
+        liked_pubs = [record["pub_name"] for record in result_likes]
+
+    return render_template('profil.html', friend_requests=friend_requests, friends=friends, liked_pubs=liked_pubs)
 
 
 
@@ -249,4 +257,12 @@ def user_profile(username):
         result_friends = session.run(query_friends, username=username)
         friends = [record["username"] for record in result_friends]
 
-    return render_template('uzivatel_profil.html', user=user_data, friends=friends)
+        query_likes = """
+        MATCH (u:User)-[:LIKES]-(p:Pub)
+        WHERE u.username = $username
+        RETURN p.name AS pub_name
+        """
+        result_likes = session.run(query_likes, username=username)
+        liked_pubs = [record["pub_name"] for record in result_likes]
+
+    return render_template('uzivatel_profil.html', user=user_data, friends=friends, liked_pubs=liked_pubs)

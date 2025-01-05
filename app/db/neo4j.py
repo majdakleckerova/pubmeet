@@ -64,7 +64,6 @@ def get_friends(user_id):
 
 
 
-
     
 #def get_user_by_id(user_id):
 #    with neo4j_driver.session() as session:
@@ -207,3 +206,4 @@ def handle_friend_request():
             result = session.run(query, username1=username, username2=current_user.username)
 
     return jsonify({"success": True, "message": f"Akce {action} byla úspěšně provedena."})
+
