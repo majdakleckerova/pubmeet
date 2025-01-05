@@ -1,4 +1,4 @@
-from flask import Blueprint, request, redirect, render_template, flash, url_for, session, current_app
+from flask import Blueprint, request, redirect, render_template, flash, url_for, session, current_app, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
 from app.db.neo4j import get_neo4j_session, get_users, get_friends, get_friendship_status
 from flask_login import login_required, login_user, logout_user, current_user
@@ -26,6 +26,10 @@ auth_bp = Blueprint('auth', __name__)
 def allowed_file(filename):
     allowed_extensions = {"png", "jpg", "jpeg","HEIC"}
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in allowed_extensions
+
+@auth_bp.context_processor
+def inject_active_route():
+    return {'active_route': request.path}
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
 def register():

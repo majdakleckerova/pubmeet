@@ -194,6 +194,8 @@ def get_liked_pubs():
     return jsonify(success=False, message="User not authenticated"), 401
 
 
+
+
 @map_bp.route('/get_pub_visitors', methods=['POST'])
 def get_pub_visitors():
     try:

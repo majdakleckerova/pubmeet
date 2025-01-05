@@ -15,10 +15,10 @@
             margin: 0;
             font-family: 'Segoe UI', Tahoma, Verdana, sans-serif;
         }
-        
+
         .sidebar {
             width: 220px; 
-            background: linear-gradient(135deg, #d3d3d3, #a9a9a9);  
+            background: linear-gradient(135deg, #e0e0e0, #b0b0b0);  
             color: #333;
             padding: 32px; 
             box-shadow: 3px 0 10px rgba(0, 0, 0, 0.2);
@@ -27,7 +27,14 @@
             position: fixed;
             top: 0;
             left: 0;
-            z-index: 1000; /* Sidebar bude vždy v popředí */
+            z-index: 1000;
+        }
+
+        .sidebar h2 {
+            font-size: 32px; /* Zvětšená velikost */
+            margin-bottom: 20px;
+            color: #333;
+            font-weight: bold; /* Tučný text */
         }
 
         .sidebar ul {
@@ -39,15 +46,29 @@
         .sidebar a {
             color: #333;
             display: block;
-            padding: 12px 0;
+            padding: 12px 20px;
             text-decoration: none;
             font-size: 18px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-            transition: background-color 0.3s ease;
+            border-radius: 5px; /* Zaoblené rohy */
+            margin-bottom: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.5); /* Bílá čára mezi položkami */
+            font-weight: bold; /* Tučný text */
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
 
         .sidebar a:hover {
-            background-color: rgba(255, 255, 255, 0.2);
+            background-color: rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar a.active {
+            background-color: #a9a9a9;
+            color: #333;
+            font-weight: bold;
+        }
+
+        .sidebar p {
+            font-size: 16px;
+            margin-top: 20px;
         }
 
         .container {
@@ -68,6 +89,7 @@
             font-size: 18px;
             color: #555;
         }
+
     </style>
 </head>
 <body>
@@ -76,33 +98,30 @@
         <nav>
             <ul>
                 <li>
-                    <a href="/home">Domů</a>
+                    <a href="/home" class="{% if active_route == '/home' %}active{% endif %}">Domů</a>
                 </li>
                 <li>
-                    <a href="/profil">Můj Profil</a>
+                    <a href="/profil" class="{% if active_route == '/profil' %}active{% endif %}">Můj Profil</a>
                 </li>
                 <li>
-                    <a href="/uzivatele">Uživatelé</a>
+                    <a href="/uzivatele" class="{% if active_route == '/uzivatele' %}active{% endif %}">Uživatelé</a>
                 </li>
-
                 <li>
-                    <a href="/mapik">Mapa</a>
+                    <a href="/mapik" class="{% if active_route == '/mapik' %}active{% endif %}">Mapa</a>
                 </li>
                 {% if current_user.is_authenticated %}
-                    <!-- Zobrazit odkazy pro přihlášené uživatele -->
                     <li>
-                        <a href="/logout">Odhlásit se</a>
+                        <a href="/logout" class="{% if active_route == '/logout' %}active{% endif %}">Odhlásit se</a>
                     </li>
                     <li>
-                        <p style="padding: 12px; font-size: 18px;">Přihlášen jako: {{ current_user.username }}</p>
+                        <p>Přihlášen jako: <strong>{{ current_user.username }}</strong></p>
                     </li>
                 {% else %}
-                    <!-- Zobrazit odkazy pro nepřihlášené uživatele -->
                     <li>
-                        <a href="/login">Přihlášení</a>
+                        <a href="/login" class="{% if active_route == '/login' %}active{% endif %}">Přihlášení</a>
                     </li>
                     <li>
-                        <a href="/register">Registrace</a>
+                        <a href="/register" class="{% if active_route == '/register' %}active{% endif %}">Registrace</a>
                     </li>
                 {% endif %}
             </ul>
