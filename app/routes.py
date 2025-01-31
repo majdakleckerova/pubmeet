@@ -5,14 +5,10 @@ from flask_login import login_required, login_user, logout_user, current_user
 from app.models.user import User
 import os
 import uuid
-
 from neo4j import GraphDatabase
 from dotenv import load_dotenv
-import os
 import pandas as pd
 
-from flask import Blueprint, jsonify, request
-from flask_login import current_user
 load_dotenv()
 neo4j_driver = GraphDatabase.driver(
     os.getenv('NEO4J_URI'),
@@ -134,7 +130,6 @@ def login():
             flash("Vyplňte všechna pole.")
             return redirect(url_for('auth.login'))
 
-        # Načti uživatele z Neo4j
         with get_neo4j_session() as session:
             result = session.run(
                 "MATCH (u:User {username: $username}) RETURN u.password AS password, u.email AS email",
@@ -150,8 +145,7 @@ def login():
             if not check_password_hash(stored_password, password):
                 flash("Špatné heslo.")
                 return redirect(url_for('auth.login'))
-
-        # Přihlásit uživatele pomocí Flask-Login
+            
         login_user(User(username=username, password_hash=stored_password, email=user['email']))
         flash(f"Vítejte, {username}!")
         return redirect(url_for('auth.profile'))
@@ -164,7 +158,6 @@ def login():
 def index():
     users = get_users()
     
-    # Přidání stavu přátelství mezi current_user a každým uživatelem v seznamu
     users_with_status = []
     for user in users:
         status = get_friendship_status(current_user.username, user['username'])
@@ -208,7 +201,7 @@ def profile():
         """
         result_friends = session.run(query_friends, username=current_user.username)
         friends = [record["username"] for record in result_friends]
-
+        # načte lajky
         query_likes = """
         MATCH (u:User)-[:LIKES]->(p:Pub)
         WHERE u.username = $username
@@ -216,7 +209,7 @@ def profile():
         """
         result_likes = session.run(query_likes, username=current_user.username)
         liked_pubs = [record["pub_name"] for record in result_likes]
-
+        # načte lokaci
         query_location = """
         MATCH (u:User)-[:VISITS]->(p:Pub)
         WHERE u.username = $username
@@ -231,7 +224,6 @@ def profile():
 
 @auth_bp.route("/")
 @auth_bp.route("/home")
-@login_required
 def home():
     return render_template("home.html")
 

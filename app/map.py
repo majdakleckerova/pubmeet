@@ -278,6 +278,7 @@ def is_pub_liked():
     except Exception as e:
         print(f"Error in is_pub_liked: {e}")
         return jsonify(success=False, error="An error occurred"), 500
+    
 @map_bp.route('/get_current_pub', methods=['GET'])
 def get_current_pub():
     if not current_user.is_authenticated:
@@ -296,6 +297,7 @@ def get_current_pub():
     except Exception as e:
         print(f"Error in get_current_pub: {e}")
         return jsonify(success=False, error="An error occurred"), 500
+    
 @map_bp.route('/get_people_count', methods=['POST'])
 def get_people_count():
     if not current_user.is_authenticated:
