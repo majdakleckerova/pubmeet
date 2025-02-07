@@ -157,17 +157,21 @@ def login():
 @login_required
 def index():
     users = get_users()
-    
+
+    search_query = request.args.get("q", "").strip().lower()
+
     users_with_status = []
     for user in users:
         status = get_friendship_status(current_user.username, user['username'])
         user['friendship_status'] = status
         users_with_status.append(user)
-    
-    return render_template("uzivatele.html", users=users_with_status)
 
+    users_with_status = sorted(users_with_status, key=lambda x: x['username'].lower())
 
+    if search_query:
+        users_with_status = [user for user in users_with_status if search_query in user['username'].lower()]
 
+    return render_template("uzivatele.html", users=users_with_status, search_query=search_query)
 
 @auth_bp.route('/logout')
 @login_required
