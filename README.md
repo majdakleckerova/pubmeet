@@ -10,7 +10,7 @@
     - ~~seznam přátel (+ zobrazit profil)~~
     - ~~majda: aktuální navštěvovaná hospoda (if friends)~~
     - ~~pole s profilem - přezdívka, bio, atd.~~
-    - majda: ?mini profilovky k přátelům + žádostem?
+    - **majda: ?mini profilovky k přátelům + žádostem?**
     - ~~majda: u žádostí do přátel upravit @ a zobrazit profil~~
  
 - **uživatelé**:
@@ -25,7 +25,13 @@
     - ~~david?: at když lajknu/navštěvuju hospodu a vyjedu z toho tak když se na to vrátim at se ukáže odebrat like/opustit~~
     - ~~návštěvníci hospody~~
     - ~~srovnat popupy~~
-    - david: zkusit opravit lajky a navštěvy
+    - ~~david: zkusit opravit lajky a navštěvy~~
 - **backend**:
     - ~~upravit žádosti o přátelství~~
 
+
+### nasazení
+- vytvořit mobilní rozhraní **(majda)**
+- vylepšit design je to shit **(majda)**
+- přidat další funkcionalitu (rozhraní hospod - ceník, události, otebíračka, pozvánky mezi users) **(majda, david)**
+- přepis do php **(david)**
