@@ -33,7 +33,7 @@
 ### nasazení
 - vytvořit mobilní rozhraní **(majda)**
 - vylepšit design je to shit **(majda)**
-- hash, brat vse pres id uzivatele
+- ~~hash, brat vse pres id uzivatele~~ - **omezený přístup do db, hashované heslo z právního hlediska stačí**
 - ~~user po x hodinach automaticky opusti roomku~~ **(majda)**
 - přidat další funkcionalitu (rozhraní hospod - ceník, události, otebíračka, pozvánky mezi users) **(majda, david)**
 - ~~přepis do php **(david)**~~
