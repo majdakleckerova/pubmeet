@@ -6,6 +6,7 @@ from app.db.neo4j import neo4j_bp
 from app.extensions import socketio
 from app.db.neo4j import get_neo4j_session
 from app.models.user import User
+from app.scheduler import scheduler
 import os
 from flask_session import Session
 

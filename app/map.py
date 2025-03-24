@@ -78,6 +78,7 @@ def toggle_pub():
                 session.run("""
                     MATCH (u:User {username: $username}), (p:Pub {name: $pub_name})
                     CREATE (u)-[r:VISITS]->(p)
+                    SET r.created_at = datetime().epochSeconds
                 """, username=username, pub_name=pub_name)
                 action = 'joined'
     
