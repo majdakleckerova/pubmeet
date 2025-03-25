@@ -137,26 +137,40 @@ def login():
 
         with get_neo4j_session() as session:
             result = session.run(
-                "MATCH (u:User {username: $username}) RETURN u.password AS password, u.email AS email",
+                "MATCH (u:User {username: $username}) RETURN u",
                 username=username
             )
-            user = result.single()
+            record = result.single()
 
-            if not user:
+            if not record:
                 flash("Uživatelské jméno neexistuje.")
                 return redirect(url_for('auth.login'))
 
-            stored_password = user['password']
+            user_node = record["u"]
+            stored_password = user_node["password"]
+            verified = user_node.get("verified") in [True, "true"]
+
             if not check_password_hash(stored_password, password):
                 flash("Špatné heslo.")
                 return redirect(url_for('auth.login'))
-            
-        login_user(User(username=username, password_hash=stored_password, email=user['email']))
-        flash(f"Vítejte, {username}!")
-        return redirect(url_for('auth.profile'))
+
+            if not verified:
+                flash("Nejprve prosím ověřte svůj e-mail.")
+                return redirect(url_for('auth.login'))
+
+            # Přihlašujeme pouze ověřeného uživatele
+            user_obj = User(
+                username=username,
+                password_hash=stored_password,
+                email=user_node["email"],
+                verified=verified
+            )
+
+            login_user(user_obj)
+            flash(f"Vítejte, {username}!")
+            return redirect(url_for('auth.profile'))
 
     return render_template('login.html')
-
 
 @auth_bp.route("/uzivatele")
 @login_required
