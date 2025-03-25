@@ -2,6 +2,7 @@ from flask import Blueprint, request, redirect, render_template, flash, url_for,
 from werkzeug.security import generate_password_hash, check_password_hash
 from app.db.neo4j import get_neo4j_session, get_users, get_friends, get_friendship_status
 from flask_login import login_required, login_user, logout_user, current_user
+from app.email_service import send_verification_email
 from app.models.user import User
 import os
 import uuid
@@ -49,10 +50,12 @@ def register():
             flash("Uživatelské jméno již existuje.")
             return redirect(url_for('auth.register'))
 
+        verification_token = str(uuid.uuid4())
+
         neo4j_session.run(
             "CREATE (u:User {username: $username, email: $email, password: $password, "
             "nickname: $nickname, birthdate: $birthdate, favourite_drink: $favourite_drink, "
-            "bio: $bio, profile_photo: $profile_photo})",
+            "bio: $bio, profile_photo: $profile_photo, verified: false, verification_token: $verification_token})",
             username=username,
             email=email,
             password=hashed_password,
@@ -60,9 +63,11 @@ def register():
             birthdate=None,
             favourite_drink=None,
             bio=None,
-            profile_photo="default.png"
+            profile_photo="default.png",
+            verification_token=verification_token
         )
 
+        send_verification_email(email, verification_token)
         flash("Registrace proběhla úspěšně. Nyní se můžete přihlásit.")
         return redirect(url_for('auth.login'))
 
@@ -303,3 +308,19 @@ def user_profile(username):
         location=location, 
         is_friend=is_friend
     )
+
+@auth_bp.route('/verify_email')
+def verify_email():
+    token = request.args.get('token')
+
+    with get_neo4j_session() as session:
+        user = session.run("MATCH (u:User {verification_token: $token}) RETURN u", token=token).single()
+        
+        if user:
+            session.run("MATCH (u:User {verification_token: $token}) SET u.verified = true REMOVE u.verification_token", token=token)
+            flash("E-mail ověřen! Můžete se přihlásit.")
+            return redirect(url_for('auth.login'))
+        else:
+            flash("Neplatný nebo expirovaný token.")
+            return redirect(url_for('auth.register'))
+

@@ -9,6 +9,8 @@ from app.models.user import User
 from app.scheduler import scheduler
 import os
 from flask_session import Session
+from flask_mail import Mail
+from app.email_service import mail
 
 def create_app():
     app = Flask(__name__)
@@ -22,6 +24,18 @@ def create_app():
     app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static', 'uploads')
 
     Session(app)  # Inicializace Flask-Session
+
+    # Konfigurace Flask-Mail
+    app.config.from_mapping(
+        MAIL_SERVER=os.getenv("MAIL_SERVER"),
+        MAIL_PORT=int(os.getenv("MAIL_PORT")),
+        MAIL_USE_TLS=os.getenv("MAIL_USE_TLS") == "True",
+        MAIL_USERNAME=os.getenv("MAIL_USERNAME"),
+        MAIL_PASSWORD=os.getenv("MAIL_PASSWORD"),
+        MAIL_DEFAULT_SENDER=os.getenv("MAIL_DEFAULT_SENDER"),
+    )
+
+    mail.init_app(app)
 
     # Registrace blueprintů
     app.register_blueprint(map_bp)
@@ -42,6 +56,10 @@ def create_app():
             user_data = result.single()
             if user_data:
                 user = user_data['u']
+
+                verified_bool = user.get('verified') in [True, "true"]
+                verified = verified_bool
+
                 return User(username=user['username'],
                             password_hash=user['password'],
                             email=user['email'],  # Zachováno
@@ -49,7 +67,9 @@ def create_app():
                             birthdate=user.get('birthdate'),
                             favourite_drink=user.get('favourite_drink'),
                             bio=user.get('bio'),
-                            profile_photo=user.get('profile_photo')
+                            profile_photo=user.get('profile_photo'),
+                            verified=verified_bool,
+                            verification_token=user.get('verification_token')
                             )
             return None
 
