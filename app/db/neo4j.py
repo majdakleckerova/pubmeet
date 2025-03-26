@@ -1,10 +1,10 @@
 from neo4j import GraphDatabase
 from dotenv import load_dotenv
+from flask import Blueprint, jsonify, request
+from flask_login import current_user
 import os
 import pandas as pd
 
-from flask import Blueprint, jsonify, request
-from flask_login import current_user
 load_dotenv()
 
 neo4j_bp = Blueprint('neo4j', __name__)
@@ -20,7 +20,6 @@ def get_neo4j_session():
 # Funkce pro zapsání hospod do Neo4j
 def load_pubs_to_neo4j(file_path="hospody.xlsx"):
     try:
-        # Načtení dat z Excelu
         hospody_df = pd.read_excel(file_path).dropna(subset=["Latitude", "Longitude", "Adresa"])
     except Exception as e:
         return f"Chyba při načítání Excelu: {e}"
@@ -44,7 +43,6 @@ def load_pubs_to_neo4j(file_path="hospody.xlsx"):
 
     return "Hospody byly úspěšně zapsány do Neo4j."
 
-## Spuštění funkce
 result = load_pubs_to_neo4j("hospody.xlsx")
 result
 
@@ -62,16 +60,8 @@ def get_friends(user_id):
         return result.data()
     
 
-
-
-    
-#def get_user_by_id(user_id):
-#    with neo4j_driver.session() as session:
-#        result = session.run("MATCH (u:User {id: $id}) RETURN u", id=user_id)
-#        user = result.single()
-#        return user['u'] if user else None
-
-
+#############################################################################################################################
+# Žádosti o přátelství
 @neo4j_bp.route('/send_friend_request', methods=['POST'])
 def send_friend_request():
     if not current_user.is_authenticated:
@@ -86,7 +76,6 @@ def send_friend_request():
     username1 = current_user.username
 
     with neo4j_driver.session() as session:
-        # Nejprve zkontrolujeme, zda už mezi uživateli neexistuje vztah FRIEND_REQUEST nebo FRIENDS
         query = """
         MATCH (u1:User {username: $username1}), (u2:User {username: $username2})
         OPTIONAL MATCH (u1)-[r1:FRIEND_REQUEST]->(u2)
@@ -101,7 +90,6 @@ def send_friend_request():
         if relationship_exists:
             return jsonify({"error": "Mezi tebou a tímto uživatelem již existuje žádost o přátelství nebo přátelství."}), 400
 
-        # Pokud žádný vztah neexistuje, vytvoříme novou žádost o přátelství
         query = """
         MATCH (u1:User {username: $username1}), (u2:User {username: $username2})
         MERGE (u1)-[r:FRIEND_REQUEST {status: 'REQUESTED'}]->(u2)

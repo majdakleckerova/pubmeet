@@ -10,6 +10,8 @@ from neo4j import GraphDatabase
 from dotenv import load_dotenv
 import pandas as pd
 
+############################################################################################################################################
+# Session
 load_dotenv()
 neo4j_driver = GraphDatabase.driver(
     os.getenv('NEO4J_URI'),
@@ -20,13 +22,27 @@ def get_neo4j_session():
 
 auth_bp = Blueprint('auth', __name__)
 
-def allowed_file(filename):
-    allowed_extensions = {"png", "jpg", "jpeg","HEIC"}
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in allowed_extensions
-
 @auth_bp.context_processor
 def inject_active_route():
     return {'active_route': request.path}
+
+##################################################################################################################################
+# Základní routes
+@auth_bp.route("/")
+@auth_bp.route("/home")
+def home():
+    return render_template("home.html")
+
+@auth_bp.route("/mapik")
+@login_required
+def mapik():
+    return render_template("mapik.html")
+
+############################################################################################################################################
+# Registrace
+def allowed_file(filename):
+    allowed_extensions = {"png", "jpg", "jpeg","HEIC"}
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in allowed_extensions
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
 def register():
@@ -35,21 +51,35 @@ def register():
         email = request.form['email']
         password = request.form['password']
 
+        # Vyplnění všech polí
         if not username or not email or not password:
-            flash("Vyplňte všechna pole.")
+            flash("Vyplňte všechna pole.", category="error")
+            return redirect(url_for('auth.register'))
+        
+        # Kontrola platnosti emailu
+        if not email or '@' not in email or '.' not in email:
+            flash("Zadejte platný email.", category="error")
             return redirect(url_for('auth.register'))
 
+        # Kontrola síly hesla (alespoň 6 znaků)
+        if len(password) < 6:
+            flash("Heslo musí mít alespoň 6 znaků.", category="error")
+            return redirect(url_for('auth.register'))
+
+        # Hash hesla
         hashed_password = generate_password_hash(password)
 
+        # Kontrola jedinečnosti uživatelského jména
         neo4j_session = get_neo4j_session()
         result = neo4j_session.run(
             "MATCH (u:User {username: $username}) RETURN u",
             username=username
         )
         if result.single():
-            flash("Uživatelské jméno již existuje.")
+            flash("Uživatelské jméno již existuje. Vyberte si jiné.", category="error")
             return redirect(url_for('auth.register'))
 
+        # Vytvoření uživatele
         verification_token = str(uuid.uuid4())
 
         neo4j_session.run(
@@ -67,64 +97,29 @@ def register():
             verification_token=verification_token
         )
 
+        # Info o zaslání verifikačního linku
         send_verification_email(email, verification_token)
-        flash("Registrace proběhla úspěšně. Nyní se můžete přihlásit.")
+        flash(f"Pro dokončení registrace ověřte svou e-mailovou adresu kliknutím na ověřovací odkaz, který jsme vám poslali na adresu { email }.", category="info")
         return redirect(url_for('auth.login'))
 
     return render_template('register.html')
 
-
-@auth_bp.route('/edit_profile', methods=["GET", "POST"])
-@login_required
-def edit_profile():
-    if request.method == "POST":
-        nickname = request.form.get('nickname')
-        birthdate = request.form.get('birthdate')
-        favourite_drink = request.form.get('favourite_drink')
-        bio = request.form.get('bio')
-        profile_photo = request.files.get("profile_photo")
-
-        photo_filename = current_user.profile_photo  # Pokud uživatel nemění fotku, použije se současná
-        if profile_photo and allowed_file(profile_photo.filename):
-            file_extension = profile_photo.filename.rsplit('.', 1)[1].lower()
-            unique_filename = f"{uuid.uuid4().hex}.{file_extension}"
-            filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], unique_filename)
-            try:
-                profile_photo.save(filepath)
-                photo_filename = unique_filename
-            except Exception as e:
-                flash("Nepodařilo se uložit profilovou fotku.")
-                return redirect(url_for('auth.edit_profile'))
-
-        with get_neo4j_session() as session:
-            query = "MATCH (u:User {username: $username}) SET "
-            params = {'username': current_user.username}
-
-            if nickname:
-                query += "u.nickname = $nickname, "
-                params['nickname'] = nickname
-            if birthdate:
-                query += "u.birthdate = $birthdate, "
-                params['birthdate'] = birthdate
-            if favourite_drink:
-                query += "u.favourite_drink = $favourite_drink, "
-                params['favourite_drink'] = favourite_drink
-            if bio:
-                query += "u.bio = $bio, "
-                params['bio'] = bio
-            if profile_photo:
-                query += "u.profile_photo = $profile_photo, "
-                params['profile_photo'] = photo_filename
-
-            query = query.rstrip(", ")
-            session.run(query, params)
-
-        flash("Profil byl úspěšně aktualizován!")
-        return redirect(url_for('auth.profile'))
-
-    return render_template('edit_profile.html')
-
-
+############################################################################################################################################
+# Ověření emailu
+@auth_bp.route('/verify_email')
+def verify_email():
+    token = request.args.get('token')
+    with get_neo4j_session() as session:
+        user = session.run("MATCH (u:User {verification_token: $token}) RETURN u", token=token).single()
+        if user:
+            session.run("MATCH (u:User {verification_token: $token}) SET u.verified = true REMOVE u.verification_token", token=token)
+            flash("E-mail ověřen!Nyní se můžete přihlásit", category="success")
+            return redirect(url_for('auth.login'))
+        else:
+            flash("Neplatný nebo expirovaný odkaz.", category="warning")
+            return redirect(url_for('auth.register'))
+########################################################################################################################################################################
+# Login
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -132,7 +127,7 @@ def login():
         password = request.form['password']
 
         if not username or not password:
-            flash("Vyplňte všechna pole.")
+            flash("Vyplňte všechna pole.", category="warning")
             return redirect(url_for('auth.login'))
 
         with get_neo4j_session() as session:
@@ -143,7 +138,7 @@ def login():
             record = result.single()
 
             if not record:
-                flash("Uživatelské jméno neexistuje.")
+                flash("Uživatelské jméno neexistuje.", category="error")
                 return redirect(url_for('auth.login'))
 
             user_node = record["u"]
@@ -151,11 +146,11 @@ def login():
             verified = user_node.get("verified") in [True, "true"]
 
             if not check_password_hash(stored_password, password):
-                flash("Špatné heslo.")
+                flash("Zadali jste nesprávné heslo. Zkuste to znovu", category="error")
                 return redirect(url_for('auth.login'))
 
             if not verified:
-                flash("Nejprve prosím ověřte svůj e-mail.")
+                flash("Nejprve prosím ověřte svůj e-mail kliknutím na verifikační odkaz.", category="info")
                 return redirect(url_for('auth.login'))
 
             # Přihlašujeme pouze ověřeného uživatele
@@ -167,43 +162,27 @@ def login():
             )
 
             login_user(user_obj)
-            flash(f"Vítejte, {username}!")
+            flash(f"Vítejte, {username}!", category="success")
             return redirect(url_for('auth.profile'))
 
     return render_template('login.html')
 
-@auth_bp.route("/uzivatele")
-@login_required
-def index():
-    users = get_users()
-
-    search_query = request.args.get("q", "").strip().lower()
-
-    users_with_status = []
-    for user in users:
-        status = get_friendship_status(current_user.username, user['username'])
-        user['friendship_status'] = status
-        users_with_status.append(user)
-
-    users_with_status = sorted(users_with_status, key=lambda x: x['username'].lower())
-
-    if search_query:
-        users_with_status = [user for user in users_with_status if search_query in user['username'].lower()]
-
-    return render_template("uzivatele.html", users=users_with_status, search_query=search_query)
-
+########################################################################################################################################################################
+# Odhlášení
 @auth_bp.route('/logout')
 @login_required
 def logout():
     logout_user()
-    flash("Byli jste úspěšně odhlášeni.")
+    flash("Byli jste úspěšně odhlášeni.", category="success")
     return redirect(url_for('auth.login'))
 
-
+########################################################################################################################################################################
+# Můj profil
 @auth_bp.route('/profil', methods=['GET'])
 @login_required
 def profile():
     if not current_user.is_authenticated:
+        flash("Pro přístup na Váš profil se musíte přihlásit.", category="info")
         return redirect(url_for('auth.login'))
 
     with neo4j_driver.session() as session:
@@ -243,20 +222,81 @@ def profile():
 
     return render_template('profil.html', friend_requests=friend_requests, friends=friends, liked_pubs=liked_pubs, location=location)
 
-
-
-@auth_bp.route("/")
-@auth_bp.route("/home")
-def home():
-    return render_template("home.html")
-
-
-@auth_bp.route("/mapik")
+################################################################################################################################################
+# Úprava profilu
+@auth_bp.route('/edit_profile', methods=["GET", "POST"])
 @login_required
-def mapik():
-    return render_template("mapik.html")
+def edit_profile():
+    if request.method == "POST":
+        nickname = request.form.get('nickname')
+        birthdate = request.form.get('birthdate')
+        favourite_drink = request.form.get('favourite_drink')
+        bio = request.form.get('bio')
+        profile_photo = request.files.get("profile_photo")
 
+        photo_filename = current_user.profile_photo  # Pokud uživatel nemění fotku, použije se současná
+        if profile_photo and allowed_file(profile_photo.filename):
+            file_extension = profile_photo.filename.rsplit('.', 1)[1].lower()
+            unique_filename = f"{uuid.uuid4().hex}.{file_extension}"
+            filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], unique_filename)
+            try:
+                profile_photo.save(filepath)
+                photo_filename = unique_filename
+            except Exception as e:
+                flash("Nepodařilo se uložit profilovou fotku. Zkuste to znovu.", category="error")
+                return redirect(url_for('auth.edit_profile'))
 
+        with get_neo4j_session() as session:
+            query = "MATCH (u:User {username: $username}) SET "
+            params = {'username': current_user.username}
+
+            if nickname:
+                query += "u.nickname = $nickname, "
+                params['nickname'] = nickname
+            if birthdate:
+                query += "u.birthdate = $birthdate, "
+                params['birthdate'] = birthdate
+            if favourite_drink:
+                query += "u.favourite_drink = $favourite_drink, "
+                params['favourite_drink'] = favourite_drink
+            if bio:
+                query += "u.bio = $bio, "
+                params['bio'] = bio
+            if profile_photo:
+                query += "u.profile_photo = $profile_photo, "
+                params['profile_photo'] = photo_filename
+
+            query = query.rstrip(", ")
+            session.run(query, params)
+
+        flash("Profil byl úspěšně aktualizován!", category="success")
+        return redirect(url_for('auth.profile'))
+
+    return render_template('edit_profile.html')
+
+############################################################################################################################################
+# Uživatelé
+@auth_bp.route("/uzivatele")
+@login_required
+def index():
+    users = get_users()
+
+    search_query = request.args.get("q", "").strip().lower()
+
+    users_with_status = []
+    for user in users:
+        status = get_friendship_status(current_user.username, user['username'])
+        user['friendship_status'] = status
+        users_with_status.append(user)
+
+    users_with_status = sorted(users_with_status, key=lambda x: x['username'].lower())
+
+    if search_query:
+        users_with_status = [user for user in users_with_status if search_query in user['username'].lower()]
+
+    return render_template("uzivatele.html", users=users_with_status, search_query=search_query)
+###################################################################################################################################################################
+# Profily uživatelů
 @auth_bp.route('/uzivatele/<username>', methods=['GET'])
 @login_required
 def user_profile(username):
@@ -323,18 +363,5 @@ def user_profile(username):
         is_friend=is_friend
     )
 
-@auth_bp.route('/verify_email')
-def verify_email():
-    token = request.args.get('token')
 
-    with get_neo4j_session() as session:
-        user = session.run("MATCH (u:User {verification_token: $token}) RETURN u", token=token).single()
-        
-        if user:
-            session.run("MATCH (u:User {verification_token: $token}) SET u.verified = true REMOVE u.verification_token", token=token)
-            flash("E-mail ověřen! Můžete se přihlásit.")
-            return redirect(url_for('auth.login'))
-        else:
-            flash("Neplatný nebo expirovaný token.")
-            return redirect(url_for('auth.register'))
 

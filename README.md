@@ -31,9 +31,20 @@
 
 
 ### nasazení
-- vytvořit mobilní rozhraní **(majda)**
-- vylepšit design je to shit **(majda)**
 - ~~hash, brat vse pres id uzivatele~~ - **omezený přístup do db, hashované heslo z právního hlediska stačí**
 - ~~user po x hodinach automaticky opusti roomku~~ **(majda)**
-- přidat další funkcionalitu (rozhraní hospod - ceník, události, otebíračka, pozvánky mezi users) **(majda, david)**
 - ~~přepis do php **(david)**~~
+1. vytvořit mobilní rozhraní **(majda)**
+2. vylepšit design je to shit **(majda)**
+3. přidat další funkcionalitu (rozhraní hospod - ceník, události, otebíračka, pozvánky mezi users) **(majda, david)**
+4. upravit zobrazování hlášek jako například "na váš mail byl zaslán verification link, po kliknutí bude vaše registrace dokončena" atd.
+5. roztřídit kód (routy, endpointy) ... začíná v tom být zmatek
+6. upravit kód před nasazením
+7. Co zapomenuté heslo??? co s tim???
+
+#### Rozhraní hospod
+- vytvořit model app/models/pub.py ... měl by obsahovat název, souřadnice, adresa, otevírací doba, nápojový lístek, události
+- vytvořit template hospody.html (swipovaci)
+- vyplňování atributů hospod formou formuláře
+- události - formulář: datum, čas od, čas do, název, poznámka + možnost usera dát zúčastnit se, pozvat někoho
+- fotky hospod do swipovaciho templatu???

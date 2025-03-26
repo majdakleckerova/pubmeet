@@ -38,6 +38,7 @@ class User(UserMixin):
 
     @property
     def is_active(self):
+        print(f"DEBUG: is_active voláno, verified = {self.verified}") 
         return self.verified
 
     @property

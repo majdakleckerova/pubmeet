@@ -1,13 +1,17 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, flash
 from flask_login import current_user
 from app.extensions import socketio
 from app.db.neo4j import neo4j_driver
-import os
-map_bp = Blueprint('map', __name__)
-import pandas as pd
 from app.db.neo4j import get_neo4j_session
 from flask_login import current_user
-# Endpoint pro načtení hospod
+import pandas as pd
+import os
+
+map_bp = Blueprint('map', __name__)
+
+
+###################################################################################################
+# get_pubs(); načtení hospod
 @map_bp.route('/get_pubs', methods=['GET'])
 def get_pubs():
     current_username = current_user.username if current_user.is_authenticated else None
@@ -33,14 +37,15 @@ def get_pubs():
                 "is_connected": record["is_connected"]  # Přidáme informaci o připojení
             })
         return jsonify(pubs)
-# Endpoint pro připojení/odpojení od hospody
+    
+
+###################################################################################################
+# připojení/odpojení od hospody
 @map_bp.route('/toggle_pub', methods=['POST'])
 def toggle_pub():
     try:
-        print("Received toggle_pub request")
         data = request.json
         pub_name = data['name']
-        print(f"Pub name: {pub_name}")
         data = request.json
         pub_name = data['name']
     
@@ -66,6 +71,7 @@ def toggle_pub():
                         DELETE r
                     """, username=username, current_pub=current_pub)
                     action = 'switched'
+                    flash(f"Přemístění z hospody {current_pub} do {pub_name} proběhlo úspěšně.", category="success")
                 else:
                     # Pokud uživatel klikne na stejnou hospodu, odpojí se
                     session.run("""
@@ -73,6 +79,7 @@ def toggle_pub():
                         DELETE r
                     """, username=username, pub_name=pub_name)
                     action = 'left'
+                    flash(f"Opuštění hospody {pub_name} proběhlo úspěšně.",category="success")
             else:
                 # Pokud není připojen, přidej vztah
                 session.run("""
@@ -81,6 +88,7 @@ def toggle_pub():
                     SET r.created_at = datetime().epochSeconds
                 """, username=username, pub_name=pub_name)
                 action = 'joined'
+                flash(f"Nyní navštěvujete hospodu {pub_name}.", category="success")
     
             # Vždy přepočítej počet lidí v hospodě
             result = session.run("""
@@ -102,7 +110,9 @@ def toggle_pub():
         print(f"Error in toggle_pub: {e}")
         return jsonify(success=False, error="An error occurred"), 500
     
-# Endpoint pro přidání/odebrání like u hospody
+
+###################################################################################################    
+# Přidání/odebrání liků
 @map_bp.route('/toggle_like', methods=['POST'])
 def toggle_like():
     try:
@@ -155,6 +165,30 @@ def toggle_like():
         return jsonify(success=False, error="An error occurred"), 500
     
 
+###################################################################################################
+# Aktuálně navštěvovaná hospoda
+@map_bp.route('/get_current_pub', methods=['GET'])
+def get_current_pub():
+    if not current_user.is_authenticated:
+        return jsonify(success=False, message="User not authenticated"), 401
+
+    try:
+        with get_neo4j_session() as session:
+            result = session.run("""
+                MATCH (u:User {username: $username})-[r:VISITS]->(p:Pub)
+                RETURN p.name AS current_pub
+            """, username=current_user.username)
+            record = result.single()
+            current_pub = record["current_pub"] if record else None
+
+        return jsonify(success=True, current_pub=current_pub)
+    except Exception as e:
+        print(f"Error in get_current_pub: {e}")
+        return jsonify(success=False, error="An error occurred"), 500
+    
+
+###################################################################################################
+# Hospody lajknuté daným userem
 @map_bp.route('/get_liked_pubs', methods=['GET'])
 def get_liked_pubs():
     if current_user.is_authenticated:
@@ -174,8 +208,8 @@ def get_liked_pubs():
     return jsonify(success=False, message="User not authenticated"), 401
 
 
-
-
+###################################################################################################
+# Users co navštěvují danou hospodu
 @map_bp.route('/get_pub_visitors', methods=['POST'])
 def get_pub_visitors():
     try:
@@ -191,6 +225,13 @@ def get_pub_visitors():
     except Exception as e:
         print(f"Error in get_pub_visitors: {e}")
         return jsonify(success=False, error="An error occurred"), 500
+    
+###################################################################################################
+# zmatek
+###################################################################################################
+
+###################################################################################################
+# Počet liků
 @map_bp.route('/get_like_count', methods=['POST'])
 def get_like_count():
     if not current_user.is_authenticated:
@@ -211,6 +252,9 @@ def get_like_count():
     except Exception as e:
         print(f"Error in get_like_count: {e}")
         return jsonify(success=False, error="An error occurred"), 500
+    
+###################################################################################################
+# Netušim
 @map_bp.route('/is_user_in_pub', methods=['POST'])
 def is_user_in_pub():
     if not current_user.is_authenticated:
@@ -231,6 +275,8 @@ def is_user_in_pub():
         print(f"Error in is_user_in_pub: {e}")
         return jsonify(success=False, error="An error occurred"), 500
 
+###################################################################################################
+# Počet návštěv, lajků hospody
 @map_bp.route('/get_pub_details', methods=['POST'])
 def get_pub_details():
     if not current_user.is_authenticated:
@@ -260,6 +306,9 @@ def get_pub_details():
     except Exception as e:
         print(f"Error in get_pub_details: {e}")
         return jsonify(success=False, error="An error occurred"), 500
+    
+###################################################################################################
+# Netušim
 @map_bp.route('/is_pub_liked', methods=['POST'])
 def is_pub_liked():
     if not current_user.is_authenticated:
@@ -280,25 +329,10 @@ def is_pub_liked():
         print(f"Error in is_pub_liked: {e}")
         return jsonify(success=False, error="An error occurred"), 500
     
-@map_bp.route('/get_current_pub', methods=['GET'])
-def get_current_pub():
-    if not current_user.is_authenticated:
-        return jsonify(success=False, message="User not authenticated"), 401
 
-    try:
-        with get_neo4j_session() as session:
-            result = session.run("""
-                MATCH (u:User {username: $username})-[r:VISITS]->(p:Pub)
-                RETURN p.name AS current_pub
-            """, username=current_user.username)
-            record = result.single()
-            current_pub = record["current_pub"] if record else None
-
-        return jsonify(success=True, current_pub=current_pub)
-    except Exception as e:
-        print(f"Error in get_current_pub: {e}")
-        return jsonify(success=False, error="An error occurred"), 500
     
+###################################################################################################
+# Počet lidí v hospodě
 @map_bp.route('/get_people_count', methods=['POST'])
 def get_people_count():
     if not current_user.is_authenticated:
