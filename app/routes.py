@@ -9,7 +9,8 @@ import uuid
 from neo4j import GraphDatabase
 from dotenv import load_dotenv
 import pandas as pd
-
+import secrets
+from app.email_service import send_new_password_email
 ############################################################################################################################################
 # Session
 load_dotenv()
@@ -363,5 +364,73 @@ def user_profile(username):
         is_friend=is_friend
     )
 
+@auth_bp.route('/change_password', methods=['GET', 'POST'])
+@login_required
+def change_password():
+    if request.method == 'POST':
+        old_password = request.form.get('old_password')
+        new_password = request.form.get('new_password')
+        confirm_new_password = request.form.get('confirm_new_password')
 
+        if not check_password_hash(current_user.password_hash, old_password):
+            flash('Staré heslo není správné.', 'danger')
+            return redirect(url_for('auth.change_password'))
+
+        if new_password != confirm_new_password:
+            flash('Nová hesla se neshodují.', 'danger')
+            return redirect(url_for('auth.change_password'))
+
+        new_password_hash = generate_password_hash(new_password)
+
+        with get_neo4j_session() as session:
+            session.run(
+                "MATCH (u:User {username: $username}) "
+                "SET u.password = $new_password",
+                username=current_user.username,
+                new_password=new_password_hash
+            )
+
+        flash('Heslo bylo úspěšně změněno.', 'success')
+        return redirect(url_for('auth.profile'))  # nebo kam chceš přesměrovat po změně hesla
+
+    return render_template('change_password.html')
+
+@auth_bp.route('/forgot_password', methods=['GET', 'POST'])
+def forgot_password():
+    if request.method == 'POST':
+        username = request.form.get('username')
+        email = request.form.get('email')
+
+        with get_neo4j_session() as session:
+            result = session.run(
+                "MATCH (u:User {username: $username, email: $email}) RETURN u",
+                username=username,
+                email=email
+            )
+            user = result.single()
+
+            if user:
+                # Vygenerujeme nové náhodné heslo
+                new_password = secrets.token_urlsafe(8)  # Například 8 znaků dlouhé
+
+                # Zahashujeme nové heslo
+                password_hash = generate_password_hash(new_password)
+
+                # Aktualizujeme v databázi
+                session.run(
+                    "MATCH (u:User {username: $username}) "
+                    "SET u.password = $password_hash",
+                    username=username,
+                    password_hash=password_hash
+                )
+
+                # Pošleme e-mail
+                send_new_password_email(email, new_password)
+
+                flash('Nové heslo bylo odesláno na váš e-mail.', 'success')
+                return redirect(url_for('auth.login'))
+            else:
+                flash('Uživatel nebyl nalezen. Zkontrolujte uživatelské jméno a e-mail.', 'danger')
+
+    return render_template('forgot_password.html')
 
