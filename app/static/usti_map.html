@@ -344,16 +344,41 @@
                 if (data.success) {
                     const normalizedName = pubName.replace(/\s/g, '_');
                     const button = document.querySelector(`#button_${normalizedName}`);
+                    const peopleCountElement = document.querySelector(`#people_count_${normalizedName}`);
+                    const visitorListElement = document.querySelector(`#visitor_list_${normalizedName}`);
+        
+                    // 🛠️ Aktualizuj text tlačítka podle akce
                     if (button) {
-                        button.textContent = data.action === 'joined' ? 'Opustit hospodu' : 'Přidat se';
+                        if (data.action === 'joined') {
+                            button.textContent = 'Opustit hospodu';
+                        } else if (data.action === 'left' || data.action === 'switched') {
+                            button.textContent = 'Přidat se';
+                        }
                     }
-                    const countElement = document.querySelector(`#people_count_${normalizedName}`);
-                    if (countElement) {
-                        countElement.textContent = data.new_count;
+        
+                    // 🔥 Aktualizuj počet lidí
+                    if (peopleCountElement) {
+                        peopleCountElement.textContent = data.new_count;
                     }
-
-                    // Aktualizace seznamu návštěvníků
-                    updatePubVisitors(pubName);
+        
+                    // 🔄 Aktualizuj seznam návštěvníků
+                    if (visitorListElement) {
+                        updatePubVisitors(pubName);
+                    }
+        
+                    // 👇 Malý bonus: aktualizuj i text v horní stránce (mapik.html)
+                    if (window.parent !== window && window.parent.document.getElementById('current-pub-info')) {
+                        fetch('/get_current_pub')
+                        .then(response => response.json())
+                        .then(pubData => {
+                            const pubInfo = window.parent.document.getElementById('current-pub-info');
+                            pubInfo.innerHTML = pubData.success && pubData.current_pub 
+                                ? `Aktuálně navštěvujete: <strong>${pubData.current_pub}</strong>`
+                                : "Momentálně nenavštěvujete žádnou hospodu.";
+                        });
+                    }
+                } else {
+                    alert(data.message || "Nastala chyba při přepojování.");
                 }
             })
             .catch(err => console.error("Error toggling pub:", err));
