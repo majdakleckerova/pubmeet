@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, request, flash
+from flask import Blueprint, jsonify, request, flash, render_template
 from flask_login import current_user
 from app.extensions import socketio
 from app.db.neo4j import neo4j_driver
@@ -353,3 +353,40 @@ def get_people_count():
     except Exception as e:
         print(f"Error in get_people_count: {e}")
         return jsonify(success=False, error="An error occurred"), 500
+###############################################################################################################################################
+#      seznam hospod
+###############################################################################################################################################
+@map_bp.route('/pub_list', methods=['GET'])
+def pub_list():
+    search_query = request.args.get('q', '').strip()  
+    
+    with get_neo4j_session() as session:
+        if search_query:
+           result = session.run("""
+            MATCH (p:Pub)
+            WHERE toLower(p.name) CONTAINS toLower($search_query)
+            OPTIONAL MATCH (p)<-[:VISITS]-(v:User)
+            OPTIONAL MATCH (p)<-[:LIKES]-(l:User)
+            RETURN p.name AS name, p.address AS address, COUNT(DISTINCT v) AS visitors, COUNT(DISTINCT l) AS likes
+            ORDER BY p.name
+        """, search_query=search_query)
+        else:
+
+            result = session.run("""
+                MATCH (p:Pub)
+                OPTIONAL MATCH (p)<-[:VISITS]-(v:User)
+                OPTIONAL MATCH (p)<-[:LIKES]-(l:User)
+                RETURN p.name AS name, p.address AS address, COUNT(DISTINCT v) AS visitors, COUNT(DISTINCT l) AS likes
+                ORDER BY p.name
+            """)
+        
+        pubs = []
+        for record in result:
+            pubs.append({
+                "name": record["name"],
+                "address": record["address"],
+                "visitors": record["visitors"],
+                "likes": record["likes"]
+            })
+    
+    return render_template('pub_list.html', pubs=pubs, search_query=search_query)

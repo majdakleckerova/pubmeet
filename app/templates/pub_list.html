@@ -1,0 +1,77 @@
+{% extends "sablona.html" %}
+
+{% block title %}Seznam hospod{% endblock %}
+
+{% block main %}
+    <style>
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        .pub-container {
+            margin-bottom: 20px;
+            padding: 10px;
+            border-bottom: 1px solid #ccc;
+        }
+        .pub-name {
+            font-size: 20px;
+            font-weight: bold;
+        }
+        .pub-address {
+            font-size: 16px;
+            color: #555;
+        }
+        .pub-stats {
+            font-size: 14px;
+            color: #777;
+            margin-top: 5px;
+        }
+    </style>
+    <style>
+        /* Už tam máš styl pro seznam, přidáme search-container */
+        .search-container {
+            margin-bottom: 20px;
+        }
+    
+        .search-container input {
+            padding: 10px;
+            width: 300px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+    
+        .search-container button {
+            padding: 10px 16px;
+            font-size: 16px;
+            background-color: #e0e0e0;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+    
+        .search-container button:hover {
+            background-color: #d3d3d3;
+        }
+    </style>
+    
+
+    <h1>Seznam hospod</h1>
+    <form method="GET" action="{{ url_for('map.pub_list') }}" class="search-container">
+        <input type="text" name="q" placeholder="Hledat hospodu..." value="{{ search_query }}">
+        <button type="submit">Hledat</button>
+    </form>
+    <ul>
+        {% for pub in pubs %}
+            <li class="pub-container">
+                <div class="pub-name">{{ pub.name }}</div>
+                <div class="pub-address">{{ pub.address }}</div>
+                <div class="pub-stats">
+                    👥 Návštěvníci : {{ pub.visitors }} |
+                    <span style="color: black;">&#10084;</span> : {{ pub.likes }}
+                </div>
+            </li>
+        {% endfor %}
+    </ul>
+{% endblock %}
