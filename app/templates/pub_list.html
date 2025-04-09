@@ -54,9 +54,26 @@
         .search-container button:hover {
             background-color: #d3d3d3;
         }
+
+        .back-button {
+            display: inline-block;
+            margin-top: 15px;
+            padding: 10px 20px;
+            border: 1px solid #6c757d;
+            border-radius: 5px;
+            color: #6c757d;
+            text-decoration: none;
+            font-size: 1em;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .back-button:hover {
+            background-color: #e2e6ea;
+            color: #343a40;
+        }
     </style>
     
-
+    <a href="/mapik"  class="back-button">Zpět na mapu</a>
     <h1>Seznam hospod</h1>
     <form method="GET" action="{{ url_for('map.pub_list') }}" class="search-container">
         <input type="text" name="q" placeholder="Hledat hospodu..." value="{{ search_query }}">
@@ -68,8 +85,12 @@
                 <div class="pub-name">{{ pub.name }}</div>
                 <div class="pub-address">{{ pub.address }}</div>
                 <div class="pub-stats">
-                    👥 Návštěvníci : {{ pub.visitors }} |
-                    <span style="color: black;">&#10084;</span> : {{ pub.likes }}
+                    <span style="color: black;">
+                        <i class="fa-solid fa-user-group"></i>
+                    </span> : <strong>{{pub.visitors}}</strong> | 
+                    <span style="color: black;">
+                        <i class="fa-solid fa-thumbs-up"></i>
+                    </span> : <strong>{{pub.likes}}</strong>
                 </div>
             </li>
         {% endfor %}

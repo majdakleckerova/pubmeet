@@ -104,13 +104,25 @@
         background-color: #d3d3d3; /* Světle šedé pro disabled */
         cursor: not-allowed;
     }
+
+    .icon {
+        color: black;
+    }
+
 </style>
 
 <body>
     {% if current_user.is_authenticated %}
+
+
+
+
+
         <!-- Horní část profilu -->
         <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 30px; border-bottom: 2px solid #bbb; padding-bottom: 30px; margin-left: 20px; max-width: 1000px;">
             <div style="display: flex; align-items: center; width: 100%; margin-bottom: 20px;">
+                
+                
                 <div>
                     {% if user.profile_photo %}
                         <img src="{{ url_for('static', filename='uploads/' + user.profile_photo) }}" 
@@ -122,10 +134,14 @@
                              style="width: 200px; height: 200px; border-radius: 50%; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);">
                     {% endif %}
                 </div>
+                
+                
                 <div style="margin-left: 30px; flex-grow: 1;">
                     <h1 style="margin: 0; font-size: 32px; font-weight: bold; color: #333;">{{ user.nickname }}</h1>
                     <p style="margin: 5px 0; color: gray; font-size: 18px;">@{{ user.username }}</p>
                 </div>
+
+
                 <!-- Tlačítko přidat do přátel -->
                 {% if user.username != current_user.username %}
                 <div style="margin-left: 50px;">
@@ -157,11 +173,13 @@
             </div>
         </div>
 
+
+
+
         <div class="profile-container">
             <!-- O uživateli -->
             <div class="block about">
-                <h3><span class="icon">👤</span>O {{ user.username }}</h3>
-                
+                <h3><span class="icon"><i class="fa-solid fa-user"></i></span>O {{ user.username }}</h3>
         
                 <p><strong>Datum narození:</strong> 
                     {{ user.birthdate if user.birthdate else 'Nezadáno' }}
@@ -172,21 +190,27 @@
                 </p>
             </div>
 
+
+
+
             <!-- Lokace -->
             <div class="block location">
-                <h3><span class="icon">📌</span>Aktuálně navštěvovaná hospoda</h3>
+                <h3><span class="icon"><i class="fa-solid fa-map-location"></i></span>Aktuálně navštěvovaná hospoda</h3>
                 {% if location %}
                     <span style="font-weight: bold; color: #333; white-space: nowrap;">
-                        {{ location[0] }}
+                        {{ location[0] }}&nbsp;<span style="color: black;"><i class="fa-solid fa-location-dot"></i></span>
                     </span>
                 {% else %}
                     Tento uživatel momentálně nenavštěvuje žádnou hospodu.
                 {% endif %}
             </div>
 
+
+
+
             <!-- Přátelé -->
             <div class="block friends">
-                <h3><span class="icon">🤝🏻</span>Seznam přátel</h3>
+                <h3><span class="icon"><i class="fa-solid fa-users"></i></span>Přátelé</h3>
                 {% if friends %}
                     <ul style="padding-left: 20px; margin: 0;">
                         {% for friend in friends %}
@@ -210,9 +234,12 @@
                 {% endif %}
             </div>
 
+
+
+
             <!-- Oblíbené hospody -->
             <div class="block pubs">
-                <h3><span class="icon">🍺</span>Oblíbené hospody</h3>
+                <h3><span class="icon"><i class="fa-solid fa-martini-glass-citrus"></i></span>Oblíbené hospody</h3>
                 {% if liked_pubs %}
                     <div style="padding-left: 20px;">
                         {% for pub in liked_pubs %}

@@ -31,6 +31,9 @@
         align-items: center;
         font-size: 20px;
         margin-bottom: 15px;
+        padding-left: 5px;
+        padding-top: 5px;
+        padding-bottom: 5px;
     }
 
     .block h3 .icon {
@@ -93,12 +96,53 @@
         background-color: #d3d3d3; /* Světle šedé pro disabled */
         cursor: not-allowed;
     }
+
+    .icon {
+        color: black;
+    }
+
+
+        /* Efekt při najetí myší */
+    button:hover, .btn:hover {
+        background-color: #d3d3d3; /* Světlejší šedá při hover */
+        transform: scale(1.05); /* Mírné zvětšení tlačítka při najetí */
+    }
+
+    /* Efekt při najetí na Přijmout žádost */
+    .accept-request:hover {
+        background-color: #808080; /* Ještě tmavší šedá při hover */
+    }
+
+    /* Efekt při kliknutí */
+    button:active, .btn:active {
+        transform: scale(0.95); /* Mírné zmenšení tlačítka při kliknutí */
+    }
+
+        /* Základní styl pro tlačítka */
+    button, .btn {
+        padding: 8px 16px;  /* Menší padding pro tlačítka */
+        font-size: 14px; /* Menší font */
+        cursor: pointer;
+        border: none;  /* Odebrání ohraničení */
+        border-radius: 5px;
+        text-align: center;
+        transition: background-color 0.3s ease, transform 0.2s ease;
+        width: 180px; /* Menší šířka tlačítek */
+        font-weight: bold;
+    }
 </style>
+
+
+
+
 <body>
     {% if current_user.is_authenticated %}
         <!-- Horní část profilu -->
         <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 30px; border-bottom: 2px solid #bbb; padding-bottom: 30px; margin-left: 20px; max-width: 1000px;">
             <div style="display: flex; align-items: center; width: 100%; margin-bottom: 20px;">
+                
+                
+                
                 <div>
                     {% if current_user.profile_photo %}
                         <img src="{{ url_for('static', filename='uploads/' + current_user.profile_photo) }}" 
@@ -110,16 +154,25 @@
                              style="width: 200px; height: 200px; border-radius: 50%; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);">
                     {% endif %}
                 </div>
+
+
+                <!-- Nickname, username -->
                 <div style="margin-left: 30px; flex-grow: 1;">
                     <h1 style="margin: 0; font-size: 32px; font-weight: bold; color: #333;">{{ current_user.nickname }}</h1>
+
                     <p style="margin: 5px 0; color: gray; font-size: 18px;">@{{ current_user.username }}</p>
                 </div>
-                <div style="margin-left: 50px;">
+
+
+                <!-- Buttony -->
+                <div style="display: flex; gap: 20px; margin-left: 50px;">
                     <a href="{{ url_for('auth.edit_profile') }}" class="btn">Upravit profil</a>
-                </div>
-                <div style="margin-left: 50px; margin-top: 10px;">
                     <a href="{{ url_for('auth.change_password') }}" class="btn">Změnit heslo</a>
-                </div>                
+                </div>
+                 
+                
+                
+
             </div>
            <!-- Bio -->
             <div style="font-weight: bold; color: #555; width: 100%; margin-top: 20px;">
@@ -128,26 +181,28 @@
             </div>
         </div>
 
+
+
+
+
+
         <div class="profile-container">
             <!-- O uživateli -->
             <div class="block about">
-                <h3><span class="icon">👤</span>O {{ current_user.username }}</h3>
-                
+                <h3><span class="icon"><i class="fa-solid fa-user"></i></span>O mně</h3>
                 <p><strong>Aktuálně navštěvovaná hospoda:</strong>
                 {% if location %}
                     <span style="font-weight: bold; color: #333; white-space: nowrap;">
-                        {{ location[0] }}📌 <!-- Předpokládáme, že location obsahuje pouze jeden prvek -->
+                        {{ location[0] }}&nbsp;<span style="color: black;"><i class="fa-solid fa-location-dot"></i></span>
                     </span>
                 {% else %}
                     Nenavštěvujete žádnou hospodu.
                 {% endif %}
                 </p>
-        
                 <!-- Datum narození a oblíbený drink budou každý na novém řádku -->
                 <p><strong>Datum narození:</strong> 
                     {{ current_user.birthdate if current_user.birthdate else 'Nezadáno' }}
                 </p>
-                
                 <p><strong>Oblíbený drink:</strong> 
                     {{ current_user.favourite_drink if current_user.favourite_drink else 'Nezadáno' }}
                 </p>
@@ -161,7 +216,7 @@
         
             <!-- Žádosti o přátelství -->
             <div class="block requests">
-                <h3><span class="icon">📩</span>Žádosti o přátelství</h3>
+                <h3><span class="icon"><i class="fa-solid fa-user-plus"></i></span>Žádosti o přátelství</h3>
                 {% if friend_requests %}
                     <ul style="padding-left: 20px;">
                         {% for request in friend_requests %}
@@ -206,9 +261,14 @@
                 {% endif %}
             </div>
         
+
+
+
+
+
             <!-- Přátelé -->
             <div class="block friends">
-                <h3><span class="icon">🤝🏻</span>Seznam přátel</h3>
+                <h3><span class="icon"><i class="fa-solid fa-users"></i></span>Přátelé</h3>
                 {% if friends %}
                     <ul style="padding-left: 20px; margin: 0;">
                         {% for friend in friends %}
@@ -232,9 +292,14 @@
                 {% endif %}
             </div>
         
+
+
+
+
+
             <!-- Oblíbené hospody -->
             <div class="block pubs">
-                <h3><span class="icon">🍺</span>Oblíbené hospody</h3>
+                <h3><span class="icon"><i class="fa-solid fa-martini-glass-citrus"></i></span>Oblíbené hospody</h3>
                 {% if liked_pubs %}
                     <div style="padding-left: 20px;">
                         {% for pub in liked_pubs %}
