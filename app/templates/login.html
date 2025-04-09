@@ -14,7 +14,7 @@
             <label for="password">Heslo:</label>
             <input type="password" id="password" name="password" required>
             
-            <p><a href="{{ url_for('auth.forgot_password') }}">Zapomenuté heslo?</a></p>
+            <p><a href="{{ url_for('auth.forgot_password') }}" class="forgot-link">Zapomenuté heslo?</a></p>
             
             <input type="submit" value="Přihlásit se">
         </form>
@@ -70,6 +70,18 @@
 
         input[type="submit"]:hover {
             background-color: #5a6268;
+        }
+
+        .forgot-link {
+        color: #495057;
+        font-weight: 600;
+        text-decoration: none;
+        transition: color 0.3s;
+        }
+
+        .forgot-link:hover {
+            color: #212529;
+            text-decoration: underline;
         }
     </style>
 {% endblock %}
