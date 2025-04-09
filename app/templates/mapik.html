@@ -44,6 +44,7 @@
 <body>
     <div class="container">
         <h1>Mapa</h1>
+        <p><a href="{{ url_for('map.pub_list') }}" style="text-decoration: none; font-weight: bold; font-size: 18px;">Seznam hospod</a></p>
         <p id="current-pub-info">Načítám aktuální hospodu...</p>
         <iframe src="{{ url_for('static', filename='usti_map.html') }}" class="map-frame"></iframe>
     </div>
