@@ -38,13 +38,30 @@
                 height: 60vh;       /* Nižší výška na menších obrazovkách */
             }
         }
+
+        .pub-list-button {
+            display: inline-block;
+            background-color: #495057; /* Tmavě šedá */
+            color: white;
+            padding: 12px 24px;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 1.2em;
+            border-radius: 8px;
+            transition: background-color 0.3s, transform 0.2s ease-in-out;
+        }
+
+        .pub-list-button:hover {
+            background-color: #343a40; /* Tmavší šedá při hoveru */
+            transform: scale(1.05); /* Trochu zvětší při hoveru */
+        }
     </style>
 </head>
 
 <body>
     <div class="container">
         <h1>Mapa</h1>
-        <p><a href="{{ url_for('map.pub_list') }}" style="text-decoration: none; font-weight: bold; font-size: 18px;">Seznam hospod</a></p>
+        <p><a href="{{ url_for('map.pub_list') }}" class="pub-list-button">Seznam hospod</a></p>
         <p id="current-pub-info">Načítám aktuální hospodu...</p>
         <iframe src="{{ url_for('static', filename='usti_map.html') }}" class="map-frame"></iframe>
     </div>
