@@ -4,14 +4,13 @@
 {% endblock %}
 
 {% block main %}
-<head>
     <style>
         html, body {
             width: 100%;
             height: 100%;
             margin: 0;
             padding: 0;
-            overflow: hidden; /* Zakáže scrollování */
+            overflow: auto;
         }
         
         .container {
@@ -19,7 +18,7 @@
             max-width: 90%;
             margin: 0 auto;
             text-align: center;
-            position: relative;
+            position: fixed;
         }
         
         h1 {
@@ -56,7 +55,6 @@
             transform: scale(1.05); /* Trochu zvětší při hoveru */
         }
     </style>
-</head>
 
 <body>
     <div class="container">

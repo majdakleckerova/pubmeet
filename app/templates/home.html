@@ -6,10 +6,6 @@ PubMeet
 
 {% block main %}
 <style>
-    body {
-        background-color: #ffffff;
-        font-family: 'Poppins',sans-serif;
-    }
 
     h1 {
         font-size: 8em; 
@@ -21,7 +17,7 @@ PubMeet
     .divider {
         width: 100%; /* Čára bude celá šířka */
         height: 3px;
-        background-color: #a9a9a9;
+        background-color: white;
         margin-top: 20px;
     }
 
@@ -52,15 +48,16 @@ PubMeet
     .feature {
         text-align: center;
         padding: 20px;
-        background-color: #e0e0e0;
+        background-color: white;
         border-radius: 10px;
         width: 25%;
         box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
     }
 
-    .feature img {
-        width: 60px;
+    .feature i {
+        font-size: 60px;
         margin-bottom: 15px;
+        color: #FF54A7;
     }
 
     .feature h3 {
@@ -72,15 +69,11 @@ PubMeet
     .credits {
         margin-top: 50px;
         font-size: 1em; /* Menší písmo pro tvůrce */
-        color: #333;
+        color: white;
     }
 
     .credits strong {
-        color: #5a5a5a;
-    }
-
-    .sidebar {
-        text-align: left;
+        color: white;
     }
 
 </style>
@@ -94,17 +87,17 @@ PubMeet
 
 <div class="features">
     <div class="feature">
-        <img src="https://img.icons8.com/ios/452/beer.png" alt="beer-icon">
+        <i class="fa-solid fa-martini-glass-citrus"></i>
         <h3>Hospody</h3>
         <p>Najděte hospody ve svém okolí a připojte se k těm, kdo tam jsou.</p>
     </div>
     <div class="feature">
-        <img src="https://img.icons8.com/ios/452/user-male.png" alt="user-icon">
+        <i class="fa-regular fa-users"></i>
         <h3>Uživatelé</h3>
         <p>Prozkoumejte profily uživatelů a zjistěte, kdo je právě na místě.</p>
     </div>
     <div class="feature">
-        <img src="https://img.icons8.com/ios/452/map.png" alt="map-icon"> <!-- Opravená ikona mapy -->
+        <i class="fa-regular fa-map-location"></i>
         <h3>Mapa</h3>
         <p>Podívejte se na mapu a zjistěte, které hospody jsou populární.</p>
     </div>

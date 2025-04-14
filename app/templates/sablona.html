@@ -8,89 +8,98 @@
     <title>pubMeet</title>
     <style>
         body {
-            background-color: #ffffff;
-            color: #000;
-            display: flex;
+            background: linear-gradient(135deg, #ffe0ef 0%, #f8b0d1 40%, #9e4e97 100%);
+            color: #333;
             justify-content: left;
-            align-items: flex-start;
-            height: 100vh;
             margin: 0;
-            font-family: 'Poppins','Arial', sans-serif;
+            font-family: 'Poppins', sans-serif;
+            position: relative;
         }
 
+
+        .container {
+            margin-left: 300px;
+            padding: 60px 40px; 
+            width: calc(100% - 320px); 
+            box-sizing: border-box;
+        }
+
+
+
+        h1 {
+            font-size: 56px;
+            font-weight: 700;
+            color: black;
+        }
+
+
+
+        p {
+            font-size: 18px;
+            color: black;
+        }
+
+
+
         .sidebar {
-            width: 250px; 
-            background: linear-gradient(135deg, #e0e0e0, #b0b0b0);  
-            color: #333;
-            padding: 32px; 
-            box-shadow: 3px 0 10px rgba(0, 0, 0, 0.2);
-            border-radius: 0 15px 15px 0;
+            width: 240px; 
+            padding: 32px;
+
             height: 100vh;
             position: fixed;
             top: 0;
-            left: 0;
             z-index: 1000;
-        }
+            left: 20px;
 
+            border-radius: 20px;
+            background: white; 
+            border: 1.5px solid transparent;
+            transition: all 0.3s ease; 
+            color: black;
+            box-shadow: 4px 0 20px rgba(0, 0, 0, 0.1);
+        }
         .sidebar h2 {
-            font-size: 32px; /* Zvětšená velikost */
-            margin-bottom: 20px;
-            color: #333;
-            font-weight: bold; /* Tučný text */
+            font-size: 38px; 
+            margin-bottom: 12px;
+            font-weight: bold; 
         }
-
         .sidebar ul {
             list-style-type: none; 
             padding: 0; 
             margin: 0; 
         }
-
         .sidebar a {
-            color: #333;
+            color: black;
             display: block;
-            padding: 12px 20px;
+            padding: 14px 20px;
             text-decoration: none;
-            font-size: 18px;
-            border-radius: 5px; /* Zaoblené rohy */
-            margin-bottom: 10px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.5); /* Bílá čára mezi položkami */
-            font-weight: bold; /* Tučný text */
+            font-size: 20px;
+            font-weight: 600;
+            border-radius: 12px; 
+            margin-bottom: 12px;
+            border-bottom: none; 
             transition: background-color 0.3s ease, color 0.3s ease;
+            background: rgba(255, 255, 255, 0.1);
         }
-
         .sidebar a:hover {
-            background-color: rgba(0, 0, 0, 0.1);
+            background-color: rgba(248, 176, 209, 0.4);
+            border-color: #f987c5; /* jemný outline */
+            color: #9e4e97;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
-
         .sidebar a.active {
-            background-color: #a9a9a9;
-            color: #333;
+            background-color: #f8b0d1;
+            color: #9e4e97;
             font-weight: bold;
+            border-color: #f987c5;
         }
-
         .sidebar p {
-            font-size: 16px;
+            font-size: 18px;
             margin-top: 20px;
-        }
-
-        .container {
-            margin-left: 250px;
-            padding: 80px; 
-            max-width: calc(100% - 250px); /* Nastavuje šířku bloku */
-            width: 100%; /* Zajišťuje responsivitu */
-            text-align: left;
-        }
-
-        h1 {
-            font-size: 72px;
-            font-weight: bold;
             color: #333;
         }
 
-        p {
-            font-size: 18px;
-            color: #555;
-        }
+
 
         /* Flash zprávy */
         .flash-container {
@@ -102,9 +111,8 @@
             width: 100%;
             max-width: 600px;
         }
-
         .flash-message {
-            background-color: rgba(0, 0, 0, 0.75);  /* Poloprůhledné pozadí */
+            background-color: rgba(0, 0, 0, 0.75); 
             color: #fff;
             padding: 15px;
             border-radius: 8px;
@@ -115,45 +123,37 @@
             margin: 10px 0;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
         }
-
         .flash-message.success {
-            background-color: rgba(141, 188, 156, 0.8); /* Zelená pro úspěch */
+            background-color: #FF007F; /* Zelená pro úspěch */
         }
-
         .flash-message.error {
-            background-color: rgba(201, 91, 116, 0.8); /* Červená pro chybu */
+            background-color: #FF007F; /* Červená pro chybu */
         }
-
         .flash-message.info {
-            background-color: rgba(208, 156, 224, 0.8); /* Modrá pro info */
+            background-color: #F987C5; /* Modrá pro info */
         }
-
         .flash-message.warning {
-            background-color: rgba(146, 203, 206, 0.8); /* Žlutá pro varování */
+            background-color: #F987C5; /* Žlutá pro varování */
         }
-
         .flash-message p {
             margin: 0;
             font-size: 1em;
         }
-
         .flash-message button {
             background-color: transparent;
             border: none;
             color: inherit;
             font-size: 18px;
-            font-weight:bold
+            font-weight: 500;
             cursor: pointer;
             padding: 8px 12px;
             border-radius: 5px;
             margin-left: 20px;
             transition: background-color 0.3s;
         }
-
         .flash-message button:hover {
             background-color: rgba(255, 255, 255, 0.2);
         }
-
         /* Možnost pro animaci */
         @keyframes flashAnimation {
             0% {
@@ -163,15 +163,93 @@
                 opacity: 1;
             }
         }
-
         .flash-message {
             animation: flashAnimation 0.5s ease-in-out;
         }
+
+
+
+    /* edit_profile.html formulář */
+    .form-group {
+        margin-bottom: 20px;
+    }
+    .form-group label {
+        font-size: 18px;
+        font-weight: bold;
+        display: block;
+        margin-bottom: 8px;
+    }
+    .form-group input,
+    .form-group textarea {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 15px;
+    }
+    .form-group textarea {
+        height: 100px;
+    }
+    .btn {
+        background-color: #b283f0;
+        color: white;
+        padding: 15px 30px;
+        border: none;
+        border-radius: 12px;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: bold;
+        transition: background-color 0.3s ease;
+    }
+    .btn:hover {
+        background-color: #9b63d0;
+    }
+    .description {
+        font-size: 18px;
+        color: #666;
+    }
+    .status {
+        font-size: 18px;
+        font-weight: bold;
+    }
+
+       
+    
+    /* profil.html, uzivatel_profil.html */
+    .block {
+        background-color: white;
+        padding: 20px;
+        border: 1.5px solid transparent;
+        border-radius: 15px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .block h3 {
+        display: flex;
+        align-items: center;
+        font-size: 20px;
+        margin-bottom: 15px;
+        padding-left: 5px;
+        padding-top: 5px;
+        padding-bottom: 5px;
+    }
+
+    .block h3 .icon {
+        font-size: 24px;
+        margin-right: 10px;
+    }
+
+    .icon {
+        color: black;
+    }
+
     </style>
 </head>
 <body>
     <div class="sidebar">
         <h2>Menu</h2>
+        {% if current_user.is_authenticated %}
+            <p>Přihlášen jako: <strong>{{ current_user.username }}</strong></p>
+        {% endif %}
         <nav>
             <ul>
                 <li>
@@ -189,9 +267,6 @@
                 {% if current_user.is_authenticated %}
                     <li>
                         <a href="/logout" class="{% if active_route == '/logout' %}active{% endif %}">Odhlásit se</a>
-                    </li>
-                    <li>
-                        <p>Přihlášen jako: <strong>{{ current_user.username }}</strong></p>
                     </li>
                 {% else %}
                     <li>

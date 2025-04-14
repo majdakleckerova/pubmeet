@@ -19,25 +19,7 @@
     .friends { grid-area: friends; }
     .pubs { grid-area: pubs; }
 
-    .block {
-        background-color: #e0e0e0;
-        padding: 20px;
-        border: 1px solid #ccc;
-        border-radius: 8px;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    }
 
-    .block h3 {
-        display: flex;
-        align-items: center;
-        font-size: 20px;
-        margin-bottom: 15px;
-    }
-
-    .block h3 .icon {
-        font-size: 24px;
-        margin-right: 10px;
-    }
 
     ul {
         list-style: none;
@@ -105,9 +87,7 @@
         cursor: not-allowed;
     }
 
-    .icon {
-        color: black;
-    }
+
 
 </style>
 
@@ -167,7 +147,7 @@
             </div>
 
             <!-- Bio -->
-            <div style="font-weight: bold; color: #555; width: 100%; margin-top: 20px;">
+            <div style="font-weight: bold; color: white; width: 100%; margin-top: 20px;">
                 <p style="margin: 0;">Bio:</p>
                 <p style="font-style: italic; color: #333; margin: 5px 0;">"{{ user.bio if user.bio else 'Nezadáno' }}"</p>
             </div>
